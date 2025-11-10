@@ -6,18 +6,18 @@
     <title>Filipino Budget Tracker</title>
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="styles.css">
-    <!-- Meta for App Links (updated for tiiny.app) -->
-    <meta property="og:url" content="https://fixed-budget-ph.tiiny.site/">
-    <meta property="al:web:url" content="https://fixed-budget-ph.tiiny.site/">
+    <!-- Meta for App Links (updated for GitHub Pages) -->
+    <meta property="og:url" content="https://esp046-cyber.github.io/budget-tracker/">
+    <meta property="al:web:url" content="https://esp046-cyber.github.io/budget-tracker/">
     <meta property="al:web:should_fallback" content="true">
     <!-- PWA Enhancements -->
     <meta name="theme-color" content="#007bff">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <!-- Detect Messenger and suggest external browser -->
     <script>
-        // Check if running locally (file://) or direct tiiny.app - needs proper HTTPS link
-        if (location.protocol === 'file:' || location.hostname === 'tiiny.app') {
-            document.body.innerHTML = '<h1 style="padding:50px;text-align:center;">🚫 Bawal ang file:// o direct tiiny.app<br><br>Gamitin ang link: <a href="https://fixed-budget-ph.tiiny.site">https://fixed-budget-ph.tiiny.site</a></h1>';
+        // Check if running locally (file://) - needs HTTPS for PWA
+        if (location.protocol === 'file:') {
+            document.body.innerHTML = '<h1 style="padding:50px;text-align:center;">🚫 Bawal ang file://<br><br>Gamitin ang link: <a href="https://esp046-cyber.github.io/budget-tracker/">https://esp046-cyber.github.io/budget-tracker/</a></h1>';
         }
         // Detect Messenger and suggest Chrome/Safari
         if (navigator.userAgent.indexOf('FBAN') > -1 || navigator.userAgent.indexOf('FBAV') > -1) {
@@ -149,29 +149,10 @@
         // Fallback if app.js fails to load
         window.addEventListener('load', () => {
             if (typeof showSection === 'undefined') {
-                document.getElementById('app').innerHTML = '<h2 style="color:red;text-align:center;">Error: app.js not loaded. Try refreshing or check <a href="https://github.com/yourusername/budget-tracker">GitHub Pages</a>.</h2>';
+                document.getElementById('app').innerHTML = '<h2 style="color:red;text-align:center;">Error: app.js not loaded. Try refreshing or check <a href="https://esp046-cyber.github.io/budget-tracker">GitHub Pages</a>.</h2>';
             }
         });
-        // Try multiple paths for app.js (tiiny.app compatibility)
-        const scripts = [
-            'app.js',
-            '/app.js',
-            './app.js'
-        ];
-        let loaded = false;
-        scripts.forEach(src => {
-            const script = document.createElement('script');
-            script.src = src;
-            script.onload = () => loaded = true;
-            script.onerror = () => {};
-            document.body.appendChild(script);
-        });
-        // Timeout to ensure loading
-        setTimeout(() => {
-            if (!loaded && typeof showSection === 'undefined') {
-                document.getElementById('app').innerHTML = '<h2 style="color:red;text-align:center;">Error: app.js not loading. Use <a href="https://github.com/yourusername/budget-tracker">GitHub Pages</a> instead.</h2>';
-            }
-        }, 2000);
     </script>
+    <script src="app.js"></script>
 </body>
 </html>
