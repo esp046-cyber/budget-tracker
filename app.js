@@ -5,23 +5,38 @@ let data = JSON.parse(localStorage.getItem('budgetData')) || {
     budgetLimits: [], theme: 'light', lastUpdated: 'Never'
 };
 
+const quotes = [
+    "Ang pag-iipon ay hindi tungkol sa kung gaano kalaki ang kinikita mo, kundi kung gaano kahusay ang pag-manage mo.",
+    "A peso saved is a peso earned. (Ang pisong naipon ay pisong kinita.)",
+    "Huwag gastusin ang perang hindi pa hawak.",
+    "Magplano para sa iyong kinabukasan, mag-ipon para sa iyong mga pangarap.",
+    "Small steps in saving can lead to big results."
+];
+
 // --- INIT & UTILS ---
 function init() {
     applyTheme(data.theme);
     const today = new Date().toISOString().split('T')[0];
     document.querySelectorAll('input[type="date"]').forEach(el => el.value = today);
-    updateAll();
+
+    // NEW: Run recurring check ONCE on load.
+    const changesMade = processRecurring();
+    if (changesMade) {
+        saveData(); // This will save new transactions and trigger updateAll
+    } else {
+        updateAll(); // Just update UI
+    }
+    
+    document.getElementById('quick-add-button').onclick = () => showSection('transactions');
+    document.getElementById('loader').style.display = 'none'; // Hide initial loader
 }
 function applyTheme(theme) {
     document.documentElement.setAttribute('data-theme', theme);
     document.getElementById('theme-toggle').textContent = theme === 'light' ? '🌙' : '☀️';
 }
-function toggleTheme() {
-    data.theme = data.theme === 'light' ? 'dark' : 'light';
-    applyTheme(data.theme); saveData();
-}
+function toggleTheme() { data.theme = data.theme === 'light' ? 'dark' : 'light'; applyTheme(data.theme); saveData(); }
 function saveData() {
-    showLoader(500); // Gentle fade/load effect on save
+    showLoader(500);
     data.lastUpdated = new Date().toLocaleString();
     localStorage.setItem('budgetData', JSON.stringify(data));
     updateAll();
@@ -46,7 +61,6 @@ function updateAll() {
 function updateDashboard() {
     const currentMonth = new Date().toLocaleString('default', { month: 'long', year: 'numeric' });
     let mIncome = 0, mExpense = 0, mExpensesCat = {};
-
     data.transactions.forEach(t => {
         if (new Date(t.date).toLocaleString('default', { month: 'long', year: 'numeric' }) === currentMonth) {
             if (t.type === 'income') mIncome += t.amount;
@@ -62,13 +76,15 @@ function updateDashboard() {
     document.getElementById('total-debt').textContent = `₱${data.debts.reduce((sum, d) => sum + (d.initial - d.paid), 0).toLocaleString()}`;
     document.getElementById('total-savings').textContent = `₱${data.goals.reduce((sum, g) => sum + g.saved, 0).toLocaleString()}`;
 
-    // Budget Status Banner
     const net = mIncome - mExpense;
     const statusEl = document.getElementById('budget-status');
     statusEl.className = 'status-banner ' + (net >= 0 ? 'status-positive' : 'status-negative');
     statusEl.innerHTML = net >= 0 
-        ? `🎉 Great job! You are ₱${net.toLocaleString()} under budget this month.`
-        : `⚠️ Careful! You are ₱${Math.abs(net).toLocaleString()} over budget.`;
+        ? `🎉 Galing! You are ₱${net.toLocaleString()} under budget this month.`
+        : `⚠️ Ingat! You are ₱${Math.abs(net).toLocaleString()} over budget.`;
+
+    // NEW: Quote
+    document.getElementById('quote-of-the-day').textContent = `"${quotes[new Date().getDate() % quotes.length]}"`;
 
     drawChart(mExpensesCat, mExpense);
     checkAlerts(mExpensesCat);
@@ -91,7 +107,6 @@ function drawChart(expenses, total) {
         start += percent;
         legendHtml += `<div class="legend-item"><div class="color-dot" style="background:${color}"></div> ${cat} (${percent.toFixed(0)}%)</div>`;
     });
-    // Remove pop-in class to restart animation next time if needed
     chart.classList.remove('pop-in'); void chart.offsetWidth; chart.classList.add('pop-in');
     chart.style.background = `conic-gradient(${gradient.join(', ')})`;
     legend.innerHTML = legendHtml;
@@ -107,7 +122,7 @@ function checkAlerts(currentExpenses) {
     });
 }
 
-// --- TRANSACTIONS (Now using Table) ---
+// --- TRANSACTIONS ---
 document.getElementById('transaction-form').addEventListener('submit', e => {
     e.preventDefault();
     data.transactions.push({
@@ -115,7 +130,8 @@ document.getElementById('transaction-form').addEventListener('submit', e => {
         type: document.getElementById('trans-type').value,
         amount: parseFloat(document.getElementById('trans-amount').value),
         category: document.getElementById('trans-category').value,
-        desc: document.getElementById('trans-desc').value
+        desc: document.getElementById('trans-desc').value,
+        recurring: document.getElementById('trans-recurring').value // NEW: Save recurring
     });
     saveData(); e.target.reset(); document.getElementById('trans-date').valueAsDate = new Date();
 });
@@ -131,9 +147,9 @@ function updateTransactions() {
     ).slice().reverse().slice(0, 50).forEach(t => {
         const isExp = t.type === 'expense';
         tbody.innerHTML += `
-            <tr>
+            <tr class="${t.isRecurringInstance ? 'recurring-instance' : ''}">
                 <td><small>${t.date}</small></td>
-                <td><strong>${t.category}</strong><br><small style="color:var(--text-muted)">${t.desc.substring(0,15)}</small></td>
+                <td><strong>${t.category}</strong><br><small style="color:var(--text-muted)">${t.desc.substring(0,15)} ${t.recurring !== 'none' && !t.isRecurringInstance ? '🔄' : ''}</small></td>
                 <td style="color:${isExp ? 'var(--danger)' : 'var(--success)'};font-weight:bold">
                     ${isExp ? '-' : '+'}₱${t.amount.toLocaleString()}
                 </td>
@@ -152,6 +168,53 @@ function clearFilters() {
     if(document.getElementById('filter-options')) document.getElementById('filter-options').style.display='none';
     updateTransactions();
 }
+
+// --- NEW: RECURRING TRANSACTIONS LOGIC ---
+function processRecurring() {
+    const today = new Date();
+    let madeChanges = false;
+    
+    const originals = data.transactions.filter(t => t.recurring && t.recurring !== 'none' && !t.isRecurringInstance);
+    
+    originals.forEach(t => {
+        let lastDate = new Date(t.date);
+        const clones = data.transactions.filter(clone => clone.originalId === t.id);
+        
+        if (clones.length > 0) {
+            // Find the date of the newest clone
+            lastDate = new Date(Math.max(...clones.map(c => new Date(c.date))));
+        }
+
+        let nextDate = new Date(lastDate);
+
+        // Calculate next due date
+        if (t.recurring === 'daily') nextDate.setDate(nextDate.getDate() + 1);
+        else if (t.recurring === 'weekly') nextDate.setDate(nextDate.getDate() + 7);
+        else if (t.recurring === 'monthly') nextDate.setMonth(nextDate.getMonth() + 1);
+        else return; // Unknown interval
+
+        // Add all missing transactions up to today
+        while (nextDate <= today) {
+            madeChanges = true;
+            data.transactions.push({
+                ...t, // Copy original info
+                id: Date.now() + Math.random(), // New unique ID
+                date: nextDate.toISOString().split('T')[0],
+                isRecurringInstance: true,
+                originalId: t.id,
+                recurring: 'none' // The clone itself is not recurring
+            });
+            
+            // Increment for next loop
+            if (t.recurring === 'daily') nextDate.setDate(nextDate.getDate() + 1);
+            else if (t.recurring === 'weekly') nextDate.setDate(nextDate.getDate() + 7);
+            else if (t.recurring === 'monthly') nextDate.setMonth(nextDate.getMonth() + 1);
+        }
+    });
+    
+    return madeChanges; // True if we added new transactions
+}
+
 
 // --- DEBTS & SAVINGS ---
 function deleteItem(type, idOrIndex) {
@@ -209,7 +272,7 @@ let curGoal=null; function openContribModal(i){curGoal=i;document.getElementById
 function closeContribModal(){document.getElementById('contrib-modal').style.display='none';}
 document.getElementById('contrib-form').addEventListener('submit',e=>{e.preventDefault();data.goals[curGoal].saved+=parseFloat(document.getElementById('contrib-amount').value);saveData();closeContribModal();e.target.reset();});
 
-// --- SETTINGS & NAV ---
+// --- SETTINGS ---
 function updateSettings() {
     const opts = data.categories.map(c => `<option>${c}</option>`).join('');
     document.getElementById('trans-category').innerHTML = opts; document.getElementById('limit-category').innerHTML = opts;
@@ -228,5 +291,3 @@ function showSection(id) {
 function clearAllData() { if(confirm('⚠️ PERMANENTLY DELETE ALL DATA?')) { localStorage.removeItem('budgetData'); location.reload(); } }
 
 init();
-// Hide loader initially after init if it's still showing from HTML
-document.getElementById('loader').style.display = 'none';

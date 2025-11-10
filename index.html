@@ -32,12 +32,14 @@
         </nav>
 
         <main>
+            <!-- DASHBOARD -->
             <section id="dashboard" class="section card fade-in">
                 <h2>📊 Dashboard Overview</h2>
                 
-                <div id="budget-status" class="status-banner">
-                    Computing status...
-                </div>
+                <div id="budget-status" class="status-banner">Computing status...</div>
+                
+                <!-- NEW: Quote of the Day -->
+                <div id="quote-of-the-day" class="quote-banner"></div>
 
                 <div class="summary-grid">
                     <div class="summary-card income">
@@ -68,12 +70,16 @@
                 <ul id="alerts-list" class="list-group"></ul>
             </section>
 
+            <!-- TRANSACTIONS -->
             <section id="transactions" class="section card" style="display: none;">
                 <h2>💸 Transactions</h2>
                 <div id="search-filter" class="filter-bar">
                     <input type="text" id="search-input" placeholder="🔍 Search by name or category...">
                     <button onclick="applySearchFilter()" class="btn-small" title="Apply filters">Filter</button>
                     <button onclick="clearFilters()" class="btn-small btn-secondary" title="Show all">Clear</button>
+                </div>
+                <div class="filter-options" style="display:none;" id="filter-options">
+                     <label>Type: <select id="filter-type"><option value="">All</option><option value="income">Income</option><option value="expense">Expense</option></select></label>
                 </div>
 
                 <form id="transaction-form">
@@ -87,9 +93,20 @@
                             <input type="number" id="trans-amount" placeholder="0.00" step="0.01" min="0.01" required>
                         </div>
                     </label>
-                    <label>🏷️ Category <select id="trans-category"></select></label>
+                    <div class="form-row">
+                        <label>🏷️ Category <select id="trans-category"></select></label>
+                        <!-- NEW: Recurring Dropdown -->
+                        <label>🔄 Recurring
+                            <select id="trans-recurring">
+                                <option value="none">None</option>
+                                <option value="daily">Daily</option>
+                                <option value="weekly">Weekly</option>
+                                <option value="monthly">Monthly</option>
+                            </select>
+                        </label>
+                    </div>
                     <label>📝 Description <input type="text" id="trans-desc" placeholder="e.g., Sweldo, Meralco"></label>
-                    <small class="form-tip">💡 Tip: Add recurring bills like 'Rent' every month.</small>
+                    <small class="form-tip">💡 Tip: Set 'Recurring' for bills like Rent or Wifi.</small>
                     <button type="submit" class="btn-primary" title="Save new transaction">➕ Add Transaction</button>
                 </form>
 
@@ -102,6 +119,7 @@
                 </div>
             </section>
 
+            <!-- DEBTS -->
             <section id="debts" class="section card" style="display: none;">
                 <h2>🤝 Utang Tracker</h2>
                 <form id="debt-form">
@@ -136,6 +154,7 @@
                 </div>
             </section>
 
+            <!-- SAVINGS -->
             <section id="savings" class="section card" style="display: none;">
                 <h2>🐷 Ipon Goals</h2>
                 <form id="goal-form">
@@ -169,6 +188,7 @@
                 </div>
             </section>
 
+            <!-- SETTINGS -->
             <section id="settings" class="section card" style="display: none;">
                 <h2>⚙️ Settings</h2>
                 <div class="settings-group">
@@ -214,6 +234,9 @@
             </div>
             <button id="scroll-top" onclick="window.scrollTo({top: 0, behavior: 'smooth'})" title="Go to top">⬆️ Top</button>
         </footer>
+        
+        <!-- NEW: Floating Add Button -->
+        <button id="quick-add-button" onclick="showSection('transactions')" title="Add Transaction">➕</button>
 
         <div id="loader" class="spinner" style="display: none;">
             <div class="spinner-icon"></div>
