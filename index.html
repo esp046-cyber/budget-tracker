@@ -4,16 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Filipino Budget Tracker</title>
-    <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="styles.css">
-    <!-- Meta for App Links (updated for GitHub Pages) -->
+    <link rel="manifest" href="./manifest.json">
+    <link rel="stylesheet" href="./styles.css">
     <meta property="og:url" content="https://esp046-cyber.github.io/budget-tracker/">
     <meta property="al:web:url" content="https://esp046-cyber.github.io/budget-tracker/">
     <meta property="al:web:should_fallback" content="true">
-    <!-- PWA Enhancements -->
     <meta name="theme-color" content="#007bff">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <!-- Detect Messenger and suggest external browser -->
     <script>
         // Check if running locally (file://) - needs HTTPS for PWA
         if (location.protocol === 'file:') {
@@ -48,8 +45,7 @@
             <section id="dashboard" class="section fade-in">
                 <h2>Monthly Overview</h2>
                 <div id="overview"></div>
-                <div id="budget-chart" class="chart-container"></div> <!-- Pie chart -->
-                <h3>Budget Alerts</h3>
+                <div id="budget-chart" class="chart-container"></div> <h3>Budget Alerts</h3>
                 <ul id="alerts-list"></ul>
             </section>
             <section id="transactions" class="section" style="display: none;">
@@ -145,14 +141,20 @@
         </main>
         <div id="loader" class="spinner" style="display: none;">Loading...</div>
     </div>
+
+    <script src="./app.js" onerror="alert('CRITICAL ERROR: app.js failed to load. Please check that the file is named exactly \'app.js\' (lowercase) and is in the main folder of your GitHub repository.')"></script>
+
     <script>
-        // Fallback if app.js fails to load
         window.addEventListener('load', () => {
             if (typeof showSection === 'undefined') {
-                document.getElementById('app').innerHTML = '<h2 style="color:red;text-align:center;">Error: app.js not loaded. Try refreshing or check <a href="https://esp046-cyber.github.io/budget-tracker">GitHub Pages</a>.</h2>';
+                document.getElementById('app').innerHTML = 
+                    '<div style="color:red;text-align:center;padding:20px;">' +
+                    '<h2>Error: App did not start correctly.</h2>' +
+                    '<p>If you did not get an alert, the file loaded but might have a syntax error.</p>' +
+                    '<p>Please press <b>F12</b> (or right-click -> Inspect), go to the <b>Console</b> tab, and send a screenshot of the red errors you see there.</p>' +
+                    '</div>';
             }
         });
     </script>
-    <script src="app.js"></script>
 </body>
 </html>
