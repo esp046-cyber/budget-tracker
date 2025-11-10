@@ -85,21 +85,53 @@ main { max-width: 800px; margin: 20px auto; padding: 0 15px; min-height: 80vh; }
 .debt { background: linear-gradient(135deg, #f59e0b, #b45309); }
 .savings { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); }
 
-/* FORMS */
+/* FORMS - IMPROVED */
 form { display: flex; flex-direction: column; gap: 16px; }
-.form-row { display: flex; gap: 12px; } .form-row > * { flex: 1; }
-label { font-size: 0.9rem; font-weight: 600; color: var(--text-muted); display: flex; flex-direction: column; gap: 6px; }
+.form-row { 
+    display: flex; 
+    gap: 12px; 
+    flex-wrap: wrap;
+}
+.form-row > * { 
+    flex: 1; 
+    min-width: 120px;
+}
+label { 
+    font-size: 0.9rem; 
+    font-weight: 600; 
+    color: var(--text-muted); 
+    display: flex; 
+    flex-direction: column; 
+    gap: 6px; 
+}
 input, select {
-    padding: 14px; border: 2px solid var(--border); background: var(--bg-card);
-    color: var(--text-main); border-radius: 12px; font-size: 1rem; width: 100%; box-sizing: border-box;
+    padding: 14px; 
+    border: 2px solid var(--border); 
+    background: var(--bg-card);
+    color: var(--text-main); 
+    border-radius: 12px; 
+    font-size: 1rem; 
+    width: 100%; 
+    box-sizing: border-box;
     transition: border-color 0.2s;
 }
-input:focus, select:focus { outline: none; border-color: var(--primary); }
+input:focus, select:focus { 
+    outline: none; 
+    border-color: var(--primary); 
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
 input:invalid { border-color: var(--danger); }
 .currency-wrap { position: relative; display: flex; align-items: center; }
 .currency-symbol { position: absolute; left: 14px; color: var(--text-muted); font-weight: bold; z-index: 2; pointer-events: none; }
 .currency-wrap input { padding-left: 35px; }
 .form-tip { color: var(--text-muted); font-size: 0.85rem; margin-top: -10px; display: block; }
+
+/* Category dropdown specific styling */
+#trans-category {
+    max-width: 100%;
+    background: var(--bg-card);
+    cursor: pointer;
+}
 
 /* BUTTONS */
 button { cursor: pointer; }
@@ -186,19 +218,35 @@ footer small { display: block; margin-top: 5px; opacity: 0.7; }
     #dashboard, #transactions { page-break-after: always; }
 }
 
-@media (max-width: 600px) {
+/* RESPONSIVE DESIGN */
+@media (max-width: 768px) {
     nav button { flex-direction: column; font-size: 0.75rem; padding: 8px 4px; }
     .summary-grid { grid-template-columns: 1fr 1fr; }
-    .form-row { flex-direction: column; gap: 16px; }
+    .form-row { 
+        flex-direction: column; 
+        gap: 16px; 
+    }
+    .form-row > * { 
+        flex: none; 
+        width: 100%; 
+    }
+    #trans-category {
+        max-width: 100%;
+    }
+}
+
+@media (max-width: 600px) {
+    .header-content h1 { font-size: 1.2rem; }
+    .section h2 { font-size: 1.3rem; }
 }
 
 /* Chart Styles */
 .chart-wrapper {
-    background: var(--card-bg);
+    background: var(--bg-card);
     border-radius: 12px;
     padding: 20px;
     margin: 20px 0;
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--border);
 }
 
 .chart-container {
@@ -235,7 +283,7 @@ footer small { display: block; margin-top: 5px; opacity: 0.7; }
 
 .chart-total-text {
     font-size: 6px;
-    fill: var(--text-color);
+    fill: var(--text-main);
     font-weight: 700;
 }
 
@@ -252,9 +300,9 @@ footer small { display: block; margin-top: 5px; opacity: 0.7; }
     align-items: center;
     gap: 8px;
     padding: 6px 12px;
-    background: var(--bg-color);
+    background: var(--bg-main);
     border-radius: 8px;
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--border);
     font-size: 0.85rem;
 }
 
@@ -267,7 +315,7 @@ footer small { display: block; margin-top: 5px; opacity: 0.7; }
 
 .legend-text {
     font-weight: 500;
-    color: var(--text-color);
+    color: var(--text-main);
 }
 
 .legend-amount {
@@ -280,39 +328,4 @@ footer small { display: block; margin-top: 5px; opacity: 0.7; }
     color: var(--text-muted);
     font-style: italic;
     padding: 40px;
-}
-.form-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-}
-
-.form-row > * {
-  flex: 1;
-  min-width: 120px;
-}
-
-#trans-category {
-  max-width: 200px;
-}
-
-/* Debug borders - remove after fixing */
-.form-row { border: 2px solid red; padding: 5px; }
-.form-row label { border: 1px solid blue; padding: 3px; }
-#trans-category { border: 2px solid green !important; }
-
-@media (max-width: 768px) {
-  .form-row {
-    flex-direction: column;
-    gap: 16px;
-  }
-  
-  .form-row > * {
-    flex: none;
-    width: 100%;
-  }
-  
-  #trans-category {
-    max-width: 100%;
-  }
 }
