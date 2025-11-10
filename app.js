@@ -367,7 +367,7 @@ document.getElementById('contrib-form').addEventListener('submit', e => {
     e.target.reset();
     document.getElementById('contrib-form').style.display = 'none';
     selectedGoal = null;
-};
+});
 
 // Show section
 function showSection(id) {
@@ -471,7 +471,7 @@ if (params.has('section')) showSection(params.get('section'));
 
 // Service worker
 if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/sw.js').then(() => console.log('SW registered')).catch(err => console.error(err));
+    navigator.serviceWorker.register('./sw.js').then(() => console.log('SW registered')).catch(err => console.error(err));
 }
 
 // Show guide first time
