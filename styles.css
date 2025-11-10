@@ -281,3 +281,38 @@ footer small { display: block; margin-top: 5px; opacity: 0.7; }
     font-style: italic;
     padding: 40px;
 }
+.form-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.form-row > * {
+  flex: 1;
+  min-width: 120px;
+}
+
+#trans-category {
+  max-width: 200px;
+}
+
+/* Debug borders - remove after fixing */
+.form-row { border: 2px solid red; padding: 5px; }
+.form-row label { border: 1px solid blue; padding: 3px; }
+#trans-category { border: 2px solid green !important; }
+
+@media (max-width: 768px) {
+  .form-row {
+    flex-direction: column;
+    gap: 16px;
+  }
+  
+  .form-row > * {
+    flex: none;
+    width: 100%;
+  }
+  
+  #trans-category {
+    max-width: 100%;
+  }
+}
