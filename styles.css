@@ -1,41 +1,279 @@
-body { font-family: sans-serif; margin: 0; padding: 0; background: linear-gradient(45deg, #f3f3f3, #e0e0e0); animation: color-shift 10s infinite alternate; }
-header { background: #007bff; color: white; padding: 10px; text-align: center; }
-nav { display: flex; flex-wrap: wrap; justify-content: center; gap: 5px; padding: 10px; }
-button { padding: 10px; background: #28a745; color: white; border: none; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; }
-button:hover { box-shadow: 0 0 10px #28a745; } /* Hover glow */
-button:active { transform: scale(1.1); animation: bounce 0.3s; } /* Bounce on tap */
-.section { padding: 20px; transition: opacity 0.5s, transform 0.5s; }
-.fade-in { opacity: 0; animation: fade-in 1s forwards; }
-.slide-in { transform: translateX(100%); animation: slide-in 0.5s forwards; }
-.wave-transition { position: relative; overflow: hidden; }
-/* Fixed wave gradient error */
-.wave-transition::before { content: ''; position: absolute; top: 0; left: -100%; width: 200%; height: 100%; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.5), transparent); animation: wave 1s forwards; } 
-.parallax { overflow-y: auto; background-attachment: fixed; background-position: center; }
-ul { list-style: none; padding: 0; }
-/* Simplified hover effect so text stays readable */
-li { background: white; margin: 10px 0; padding: 15px; border-radius: 8px; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-li:hover { transform: translateY(-3px); box-shadow: 0 4px 8px rgba(0,0,0,0.15); } 
-/* Fixed spin animation syntax */
-.spinner { position: fixed; top: 50%; left: 50%; margin-top: -20px; margin-left: -20px; border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; z-index: 1000; }
-@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
-@keyframes slide-in { from { transform: translateX(100%); } to { transform: translateX(0); } }
-@keyframes color-shift { from { background: linear-gradient(45deg, #f3f3f3, #e0e0e0); } to { background: linear-gradient(45deg, #e0e0e0, #d0d0d0); } }
-@keyframes bounce { 0% { transform: scale(1); } 50% { transform: scale(1.2); } 100% { transform: scale(1); } }
-@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-@keyframes wave { 0% { left: -100%; } 100% { left: 100%; } } 
-@media (max-width: 600px) { nav { flex-direction: column; } }
-.chart-container { width: 250px; height: 250px; margin: 20px auto; position: relative; border-radius: 50%; background: conic-gradient(from 0deg, #eee 0% 100%); }
-.chart-segment { position: absolute; top:0; left:0; width: 100%; height: 100%; border-radius: 50%; }
-.chart-label { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; background: white; padding: 20px; border-radius: 50%; font-weight: bold; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-#search-filter { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; }
-#search-filter input, #search-filter select { padding: 10px; flex: 1; min-width: 120px; border: 1px solid #ccc; border-radius: 5px; }
-#alerts-list li { background: #ffebee; border-left: 5px solid #f44336; }
-#alerts-list li.safe { background: #e8f5e9; border-left: 5px solid #4caf50; }
+:root {
+    --primary-color: #2563eb;       /* Softer Blue */
+    --success-color: #059669;       /* Softer Emerald Green */
+    --accent-color: #7c3aed;        /* Purple for special buttons like Debt */
+    --danger-color: #dc2626;        /* Red for delete/reset */
+    --bg-color: #f1f5f9;            /* Light Gray-Blue Background */
+    --card-bg: #ffffff;             /* White Cards */
+    --text-primary: #1e293b;        /* Dark Slate Gray for text */
+    --text-secondary: #64748b;      /* Lighter gray for labels */
+    --border-radius: 12px;          /* Consistent rounded corners */
+}
 
-/* === FIX FOR OVERLAPPING FORMS === */
-form { display: flex; flex-direction: column; gap: 15px; padding: 15px; background: #f8f9fa; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-form label { display: flex; flex-direction: column; font-weight: bold; font-size: 0.9rem; color: #333; }
-form input, form select { padding: 12px; margin-top: 5px; border: 1px solid #ccc; border-radius: 5px; font-size: 16px; width: 100%; box-sizing: border-box; }
-form button[type="submit"] { padding: 15px; background-color: #28a745; color: white; border: none; border-radius: 5px; font-size: 18px; font-weight: bold; cursor: pointer; margin-top: 10px; width: 100%; transition: background-color 0.2s; }
-form button[type="submit"]:hover { background-color: #218838; }
-form button[type="submit"]:active { transform: scale(0.98); }
+body {
+    font-family: 'Inter', sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: var(--bg-color);
+    color: var(--text-primary);
+    line-height: 1.5;
+}
+
+/* === HEADER & NAV === */
+header {
+    background: linear-gradient(135deg, var(--primary-color), #1e40af);
+    color: white;
+    padding: 20px;
+    text-align: center;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+header h1 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+nav {
+    display: flex;
+    overflow-x: auto; /* Scrollable on very small screens */
+    background: white;
+    padding: 10px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    gap: 8px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+nav button {
+    flex: 1;
+    white-space: nowrap;
+    min-width: auto;
+    padding: 10px 12px;
+    font-size: 0.9rem;
+    background: transparent;
+    color: var(--text-secondary);
+    border: none;
+    border-radius: var(--border-radius);
+    font-weight: 600;
+}
+
+nav button:hover, nav button:active {
+    background-color: #e2e8f0;
+    color: var(--primary-color);
+    box-shadow: none;
+}
+
+/* === MAIN LAYOUT & CARDS === */
+main {
+    padding: 20px;
+    max-width: 800px;
+    margin: 0 auto;
+    min-height: 80vh;
+}
+
+.card {
+    background: var(--card-bg);
+    border-radius: 16px; /* Slightly rounder cards */
+    padding: 24px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    border: 1px solid #e2e8f0;
+}
+
+.section h2 {
+    margin-top: 0;
+    color: var(--primary-color);
+    border-bottom: 2px solid #f1f5f9;
+    padding-bottom: 15px;
+    margin-bottom: 20px;
+    font-size: 1.5rem;
+}
+
+/* === FORMS & INPUTS === */
+form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+form h3 {
+    margin: 0 0 10px 0;
+    color: var(--text-primary);
+    font-size: 1.1rem;
+}
+
+label {
+    display: flex;
+    flex-direction: column;
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+input, select {
+    padding: 12px 16px;
+    margin-top: 8px;
+    border: 2px solid #e2e8f0;
+    border-radius: var(--border-radius);
+    font-size: 1rem;
+    font-family: 'Inter', sans-serif;
+    transition: border-color 0.2s;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+input:focus, select:focus {
+    outline: none;
+    border-color: var(--primary-color);
+}
+
+/* === BUTTONS (STANDARDIZED) === */
+button {
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: 'Inter', sans-serif;
+}
+
+/* Standard Green Submit Button */
+.btn-primary, form button[type="submit"] {
+    background-color: var(--success-color);
+    color: white;
+    padding: 16px;
+    border: none;
+    border-radius: var(--border-radius);
+    font-size: 1rem;
+    font-weight: 700;
+    margin-top: 10px;
+    width: 100%;
+}
+
+.btn-primary:hover, form button[type="submit"]:hover {
+    background-color: #047857; /* Darker green */
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(5, 150, 105, 0.2);
+}
+
+.btn-primary:active, form button[type="submit"]:active {
+    transform: scale(0.98);
+}
+
+/* Accent Button (for "Add Debt" to stand out) */
+.btn-accent {
+    background-color: var(--accent-color) !important;
+}
+.btn-accent:hover {
+    background-color: #6d28d9 !important;
+    box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3) !important;
+}
+
+/* Secondary Buttons (Cancel, Export) */
+.btn-secondary {
+    background-color: white;
+    color: var(--text-primary);
+    border: 2px solid #e2e8f0;
+    padding: 12px;
+    border-radius: var(--border-radius);
+    font-weight: 600;
+}
+.btn-secondary:hover {
+    background-color: #f8fafc;
+    border-color: #cbd5e1;
+}
+
+/* Danger Buttons (Reset) */
+.btn-danger {
+    background-color: #fee2e2;
+    color: var(--danger-color);
+    border: none;
+    padding: 12px;
+    border-radius: var(--border-radius);
+    font-weight: 700;
+}
+
+/* === LISTS & ITEMS === */
+ul.list-group {
+    list-style: none;
+    padding: 0;
+    margin: 20px 0 0 0;
+}
+
+ul.list-group li {
+    background: #f8fafc;
+    padding: 16px;
+    margin-bottom: 10px;
+    border-radius: var(--border-radius);
+    border-left: 4px solid var(--primary-color);
+    cursor: pointer;
+    transition: transform 0.2s;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+ul.list-group li:hover {
+    transform: translateX(5px);
+    background: #f1f5f9;
+}
+
+/* === DASHBOARD SUMMARY === */
+#dashboard-summary {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 25px;
+}
+.summary-card {
+    flex: 1;
+    padding: 20px;
+    border-radius: var(--border-radius);
+    color: white;
+    text-align: center;
+}
+.summary-card h3 { margin: 0; opacity: 0.9; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; }
+.summary-card p { margin: 10px 0 0 0; font-size: 1.8rem; font-weight: 700; }
+.summary-card.income { background: linear-gradient(135deg, var(--success-color), #047857); }
+.summary-card.expense { background: linear-gradient(135deg, var(--danger-color), #b91c1c); }
+
+/* === CHARTS & TABLES === */
+.chart-container {
+    width: 280px;           /* Larger chart */
+    height: 280px;
+    margin: 30px auto;
+    position: relative;
+    border-radius: 50%;
+    background: conic-gradient(from 0deg, #e2e8f0 0% 100%);
+}
+
+table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+th, td { padding: 12px; text-align: left; border-bottom: 1px solid #e2e8f0; }
+th { color: var(--text-secondary); font-size: 0.85rem; text-transform: uppercase; }
+
+/* === FOOTER === */
+footer {
+    text-align: center;
+    padding: 30px;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    border-top: 1px solid #e2e8f0;
+    margin-top: 40px;
+}
+
+/* === UTILS === */
+.fade-in { animation: fadeIn 0.5s ease-in; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+/* Modals for Payments */
+.modal {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.5); z-index: 1000;
+    display: flex; align-items: center; justify-content: center;
+}
+.modal-content { width: 90%; max-width: 400px; animation: slideUp 0.3s ease-out; }
+@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+/* Responsive adjustments */
+@media (max-width: 600px) {
+    nav button { flex-direction: column; font-size: 0.75rem; padding: 8px 5px; }
+    .summary-card p { font-size: 1.4rem; }
+}
