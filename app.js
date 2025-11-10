@@ -308,8 +308,123 @@ function processRecurring() {
     return false; 
 }
 
-function drawChart(expenses, total) { 
-    // Chart logic here
+function drawChart(expenses, total) {
+    const chartContainer = document.getElementById('budget-chart');
+    const legendContainer = document.getElementById('chart-legend');
+    
+    if (!chartContainer || !legendContainer) return;
+    
+    // Clear previous chart
+    chartContainer.innerHTML = '';
+    legendContainer.innerHTML = '';
+    
+    if (Object.keys(expenses).length === 0 || total === 0) {
+        chartContainer.innerHTML = '<div class="no-data">No expense data for this month</div>';
+        return;
+    }
+    
+    // Create SVG element
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('viewBox', '0 0 100 100');
+    svg.setAttribute('class', 'chart-svg');
+    
+    const centerX = 50;
+    const centerY = 50;
+    const radius = 40;
+    
+    let startAngle = 0;
+    let colorIndex = 0;
+    
+    const colors = [
+        '#3B82F6', '#EF4444', '#10B981', '#F59E0B', '#8B5CF6',
+        '#EC4899', '#06B6D4', '#84CC16', '#F97316', '#6366F1'
+    ];
+    
+    // Create pie chart segments
+    Object.entries(expenses).forEach(([category, amount]) => {
+        const percentage = (amount / total) * 100;
+        const angle = (percentage / 100) * 360;
+        const endAngle = startAngle + angle;
+        
+        // Convert angles to radians
+        const startRad = (startAngle - 90) * Math.PI / 180;
+        const endRad = (endAngle - 90) * Math.PI / 180;
+        
+        // Calculate start and end points
+        const x1 = centerX + radius * Math.cos(startRad);
+        const y1 = centerY + radius * Math.sin(startRad);
+        const x2 = centerX + radius * Math.cos(endRad);
+        const y2 = centerY + radius * Math.sin(endRad);
+        
+        // Large arc flag (1 if angle > 180, 0 otherwise)
+        const largeArcFlag = angle > 180 ? 1 : 0;
+        
+        // Create path for pie segment
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        const pathData = `
+            M ${centerX} ${centerY}
+            L ${x1} ${y1}
+            A ${radius} ${radius} 0 ${largeArcFlag} 1 ${x2} ${y2}
+            Z
+        `;
+        
+        path.setAttribute('d', pathData.trim());
+        path.setAttribute('fill', colors[colorIndex % colors.length]);
+        path.setAttribute('class', 'chart-segment');
+        path.setAttribute('data-category', category);
+        path.setAttribute('data-amount', amount);
+        path.setAttribute('data-percentage', percentage.toFixed(1));
+        
+        // Add hover effect
+        path.addEventListener('mouseenter', function() {
+            this.style.opacity = '0.8';
+            this.style.transform = 'scale(1.05)';
+            this.style.transition = 'all 0.2s ease';
+        });
+        
+        path.addEventListener('mouseleave', function() {
+            this.style.opacity = '1';
+            this.style.transform = 'scale(1)';
+        });
+        
+        svg.appendChild(path);
+        
+        // Create legend item
+        const legendItem = document.createElement('div');
+        legendItem.className = 'legend-item';
+        legendItem.innerHTML = `
+            <span class="legend-color" style="background-color: ${colors[colorIndex % colors.length]}"></span>
+            <span class="legend-text">${category}</span>
+            <span class="legend-amount">${Formatter.currency(amount)} (${percentage.toFixed(1)}%)</span>
+        `;
+        
+        legendContainer.appendChild(legendItem);
+        
+        startAngle = endAngle;
+        colorIndex++;
+    });
+    
+    // Add center text
+    const centerText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    centerText.setAttribute('x', centerX);
+    centerText.setAttribute('y', centerY);
+    centerText.setAttribute('text-anchor', 'middle');
+    centerText.setAttribute('dominant-baseline', 'middle');
+    centerText.setAttribute('class', 'chart-center-text');
+    centerText.textContent = 'Total';
+    
+    const totalText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    totalText.setAttribute('x', centerX);
+    totalText.setAttribute('y', centerY + 8);
+    totalText.setAttribute('text-anchor', 'middle');
+    totalText.setAttribute('dominant-baseline', 'middle');
+    totalText.setAttribute('class', 'chart-total-text');
+    totalText.textContent = Formatter.currency(total);
+    
+    svg.appendChild(centerText);
+    svg.appendChild(totalText);
+    
+    chartContainer.appendChild(svg);
 }
 
 function checkAlerts(expenses) { 
