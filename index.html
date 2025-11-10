@@ -93,7 +93,15 @@
                         </div>
                     </label>
                     <div class="form-row">
-                        <label>🏷️ Category <select id="trans-category"></select></label>
+                        <label>🏷️ Category 
+                            <select id="trans-category">
+                                <option value="Food">Food</option>
+                                <option value="Bills">Bills</option>
+                                <option value="Transport">Transport</option>
+                                <option value="Shopping">Shopping</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </label>
                         <label>🔄 Recurring
                             <select id="trans-recurring">
                                 <option value="none">None</option>
@@ -190,7 +198,15 @@
                  <div class="settings-group">
                     <h3>📉 Monthly Limits</h3>
                     <form id="budget-limit-form">
-                        <label>Category <select id="limit-category"></select></label>
+                        <label>Category 
+                            <select id="limit-category">
+                                <option value="Food">Food</option>
+                                <option value="Bills">Bills</option>
+                                <option value="Transport">Transport</option>
+                                <option value="Shopping">Shopping</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </label>
                         <label>Limit Amount
                             <div class="currency-wrap">
                                 <span class="currency-symbol">₱</span>
@@ -214,12 +230,6 @@
         <div id="loader" class="spinner" style="display: none;"><div class="spinner-icon"></div><p>Computing...</p></div>
     </div>
     
-    <script>
-        const confettiCtx=document.getElementById('confetti-canvas').getContext('2d');let confettiActive=false;let particles=[];
-        function runConfetti(){if(confettiActive)return;confettiActive=true;let w=window.innerWidth,h=window.innerHeight;document.getElementById('confetti-canvas').width=w;document.getElementById('confetti-canvas').height=h;
-        for(let i=0;i<100;i++){particles.push({x:w/2,y:h/2,r:Math.random()*6+2,dx:Math.random()*10-5,dy:Math.random()*10-5,color:'hsl('+Math.random()*360+',100%,50%)',life:0});}
-        function update(){if(!confettiActive)return;confettiCtx.clearRect(0,0,w,h);particles.forEach((p,i)=>{p.x+=p.dx;p.y+=p.dy;p.dy+=0.2;p.life++;confettiCtx.fillStyle=p.color;confettiCtx.beginPath();confettiCtx.arc(p.x,p.y,p.r,0,Math.PI*2);confettiCtx.fill();if(p.y>h||p.life>200)particles.splice(i,1);});if(particles.length>0){requestAnimationFrame(update);}else{confettiCtx.clearRect(0,0,w,h);confettiActive=false;}}update();}
-    </script>
     <script src="./app.js"></script>
 </body>
 </html>
