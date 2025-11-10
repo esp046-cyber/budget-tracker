@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Filipino Budget Tracker</title>
     <meta name="description" content="Free offline Filipino Budget Tracker app.">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; media-src https://assets.mixkit.co;">
+    
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto+Condensed:wght@700&display=swap" rel="stylesheet">
@@ -40,10 +42,8 @@
                     <h2>📊 Dashboard Overview</h2>
                     <div id="mascot" class="mascot" title="I'm your Budget Buddy!">🤖</div>
                 </div>
-                
                 <div id="budget-status" class="status-banner">Computing status...</div>
                 <div id="quote-of-the-day" class="quote-banner"></div>
-
                 <div class="summary-grid">
                     <div class="summary-card income">
                         <h3>Income (Month)</h3>
@@ -62,13 +62,11 @@
                         <p id="total-savings">₱0.00</p>
                     </div>
                 </div>
-
                 <div class="chart-wrapper">
                      <h3>Monthly Spending</h3>
                      <div id="budget-chart" class="chart-container pop-in"></div>
                      <div id="chart-legend" class="chart-legend"></div>
                 </div>
-                
                 <h3>⚠️ Budget Alerts</h3>
                 <ul id="alerts-list" class="list-group"></ul>
             </section>
@@ -76,14 +74,13 @@
             <section id="transactions" class="section card" style="display: none;">
                 <h2>💸 Transactions <small style="opacity:0.6; font-size:0.8rem">(Shift + N)</small></h2>
                 <div id="search-filter" class="filter-bar">
-                    <input type="text" id="search-input" placeholder="🔍 Search by name or category...">
+                    <input type="text" id="search-input" placeholder="🔍 Search...">
                     <button onclick="applySearchFilter()" class="btn-small" title="Apply filters">Filter</button>
                     <button onclick="clearFilters()" class="btn-small btn-secondary" title="Show all">Clear</button>
                 </div>
                 <div class="filter-options" style="display:none;" id="filter-options">
                      <label>Type: <select id="filter-type"><option value="">All</option><option value="income">Income</option><option value="expense">Expense</option></select></label>
                 </div>
-
                 <form id="transaction-form">
                     <div class="form-row">
                          <label>📅 Date <input type="date" id="trans-date" required></label>
@@ -109,7 +106,6 @@
                     <label>📝 Description <input type="text" id="trans-desc" placeholder="e.g., Sweldo, Meralco"></label>
                     <button type="submit" class="btn-primary" title="Save new transaction">➕ Add Transaction</button>
                 </form>
-
                 <h3>Recent History</h3>
                 <div class="table-container">
                     <table id="trans-table">
@@ -132,20 +128,20 @@
                     <button type="submit" class="btn-accent" title="Add new debt record">➕ Add Debt</button>
                 </form>
                 <ul id="debt-list" class="list-group"></ul>
-                <div id="payment-modal" class="modal" style="display:none;">
-                    <form id="payment-form" class="card modal-content">
-                        <h3>Add Payment</h3>
-                        <p id="paying-debt-name"></p>
-                        <label>💰 Amount to Pay
+                <div id="universal-modal" class="modal" style="display:none;">
+                    <form id="modal-form" class="card modal-content">
+                        <h3 id="modal-title"></h3>
+                        <p id="modal-desc"></p>
+                        <label>💰 Amount
                             <div class="currency-wrap">
                                 <span class="currency-symbol">₱</span>
-                                <input type="number" id="payment-amount" min="0.01" required>
+                                <input type="number" id="modal-amount" min="0.01" required>
                             </div>
                         </label>
-                        <label>📅 Date <input type="date" id="payment-date" required></label>
+                        <label>📅 Date <input type="date" id="modal-date" required></label>
                         <div class="form-row">
                             <button type="submit" class="btn-primary">Confirm</button>
-                            <button type="button" onclick="closePaymentModal()" class="btn-secondary">Cancel</button>
+                            <button type="button" onclick="ModalManager.close()" class="btn-secondary">Cancel</button>
                         </div>
                     </form>
                 </div>
@@ -164,35 +160,16 @@
                     <button type="submit" class="btn-primary">➕ Set Goal</button>
                 </form>
                 <ul id="goal-list" class="list-group"></ul>
-                 <div id="contrib-modal" class="modal" style="display:none;">
-                    <form id="contrib-form" class="card modal-content">
-                        <h3>Add to Savings</h3>
-                        <label>💰 Amount to Save
-                            <div class="currency-wrap">
-                                <span class="currency-symbol">₱</span>
-                                <input type="number" id="contrib-amount" min="0.01" required>
-                            </div>
-                        </label>
-                        <label>📅 Date <input type="date" id="contrib-date" required></label>
-                        <div class="form-row">
-                             <button type="submit" class="btn-primary">Confirm</button>
-                             <button type="button" onclick="closeContribModal()" class="btn-secondary">Cancel</button>
-                        </div>
-                    </form>
-                </div>
             </section>
 
             <section id="settings" class="section card" style="display: none;">
                 <h2>⚙️ Settings</h2>
-                
                 <div class="settings-group">
                      <h3>🔊 Preferences</h3>
                      <label style="flex-direction: row; align-items: center; gap: 10px;">
-                        <input type="checkbox" id="sound-toggle" onchange="toggleSound()" style="width: auto;">
-                        Enable Sound Effects 🔊
+                        <input type="checkbox" id="sound-toggle" onchange="toggleSound()" style="width: auto;"> Enable Sound Effects 🔊
                      </label>
                 </div>
-
                 <div class="settings-group" id="drop-zone">
                     <h3>⚠️ Data Management <small>(Drag & drop CSV here)</small></h3>
                     <div class="form-row">
@@ -202,7 +179,6 @@
                     <input type="file" id="import-file" accept=".csv" style="display: none;">
                     <button onclick="clearAllData()" class="btn-danger">🗑️ Delete ALL Data</button>
                 </div>
-
                 <div class="settings-group">
                     <h3>🏷️ Categories</h3>
                     <form id="category-form" class="inline-form">
@@ -211,7 +187,6 @@
                     </form>
                     <div id="category-list" class="tags-list"></div>
                 </div>
-
                  <div class="settings-group">
                     <h3>📉 Monthly Limits</h3>
                     <form id="budget-limit-form">
@@ -230,23 +205,16 @@
         </main>
 
         <footer>
-            <div>
-                <p>© 2025 Filipino Budget Tracker 🇵🇭</p>
-                <small id="last-updated">Last updated: Never</small>
-            </div>
+            <div><p>© 2025 Filipino Budget Tracker 🇵🇭</p><small id="last-updated">Last updated: Never</small></div>
             <button id="scroll-top" onclick="window.scrollTo({top: 0, behavior: 'smooth'})" title="Go to top">⬆️ Top</button>
         </footer>
         
         <button id="quick-add-button" onclick="showSection('transactions')" title="Add Transaction (Shift+N)">➕</button>
         <canvas id="confetti-canvas" style="position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9999;"></canvas>
-
-        <div id="loader" class="spinner" style="display: none;">
-            <div class="spinner-icon"></div>
-            <p>Computing your totals...</p>
-        </div>
+        <div id="loader" class="spinner" style="display: none;"><div class="spinner-icon"></div><p>Computing...</p></div>
     </div>
+    
     <script>
-        /* Minimal confetti for offline use */
         const confettiCtx=document.getElementById('confetti-canvas').getContext('2d');let confettiActive=false;let particles=[];
         function runConfetti(){if(confettiActive)return;confettiActive=true;let w=window.innerWidth,h=window.innerHeight;document.getElementById('confetti-canvas').width=w;document.getElementById('confetti-canvas').height=h;
         for(let i=0;i<100;i++){particles.push({x:w/2,y:h/2,r:Math.random()*6+2,dx:Math.random()*10-5,dy:Math.random()*10-5,color:'hsl('+Math.random()*360+',100%,50%)',life:0});}
