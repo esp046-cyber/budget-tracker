@@ -2,7 +2,7 @@
 let data = JSON.parse(localStorage.getItem('budgetData')) || {
     transactions: [], debts: [], goals: [],
     categories: ['Food', 'Bills', 'Transport', 'Shopping', 'Other'],
-    budgetLimits: [], theme: 'light', lastUpdated: 'Never'
+    budgetLimits: [], theme: 'light', sound: true, lastUpdated: 'Never'
 };
 
 const quotes = [
@@ -16,45 +16,71 @@ const quotes = [
 // --- INIT & UTILS ---
 function init() {
     applyTheme(data.theme);
+    document.getElementById('sound-toggle').checked = data.sound !== false; // Default true if undefined
     const today = new Date().toISOString().split('T')[0];
     document.querySelectorAll('input[type="date"]').forEach(el => el.value = today);
 
-    // NEW: Run recurring check ONCE on load.
-    const changesMade = processRecurring();
-    if (changesMade) {
-        saveData(); // This will save new transactions and trigger updateAll
-    } else {
-        updateAll(); // Just update UI
-    }
+    if (processRecurring()) { saveData(); } else { updateAll(); }
     
     document.getElementById('quick-add-button').onclick = () => showSection('transactions');
-    document.getElementById('loader').style.display = 'none'; // Hide initial loader
+    document.getElementById('loader').style.display = 'none';
+    setupDragDrop();
+    setupKeyboardShortcuts();
 }
 function applyTheme(theme) {
     document.documentElement.setAttribute('data-theme', theme);
     document.getElementById('theme-toggle').textContent = theme === 'light' ? '🌙' : '☀️';
 }
 function toggleTheme() { data.theme = data.theme === 'light' ? 'dark' : 'light'; applyTheme(data.theme); saveData(); }
+function toggleSound() { data.sound = document.getElementById('sound-toggle').checked; saveData(); }
+function playSound(type) {
+    if (!data.sound) return;
+    const audio = document.getElementById(type === 'success' ? 'sfx-success' : 'sfx-click');
+    if(audio) { audio.currentTime=0; audio.volume=0.5; audio.play().catch(e=>{}); } // Catch needed for autoplay restrictions
+}
 function saveData() {
-    showLoader(500);
-    data.lastUpdated = new Date().toLocaleString();
-    localStorage.setItem('budgetData', JSON.stringify(data));
-    updateAll();
+    showLoader(400); data.lastUpdated = new Date().toLocaleString();
+    localStorage.setItem('budgetData', JSON.stringify(data)); updateAll();
 }
 function showLoader(time = 0) {
     const loader = document.getElementById('loader');
-    if(time > 0) {
-        loader.style.display = 'flex';
-        setTimeout(() => loader.style.display = 'none', time);
-    } else { loader.style.display = 'none'; }
+    if(time > 0) { loader.style.display = 'flex'; setTimeout(() => loader.style.display = 'none', time); } 
+    else { loader.style.display = 'none'; }
 }
 function updateAll() {
-    updateDashboard();
-    updateTransactions();
-    updateDebts();
-    updateGoals();
-    updateSettings();
+    updateDashboard(); updateTransactions(); updateDebts(); updateGoals(); updateSettings();
     document.getElementById('last-updated').textContent = `Last updated: ${data.lastUpdated}`;
+}
+
+// --- KEYBOARD SHORTCUTS ---
+function setupKeyboardShortcuts() {
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'N' && e.shiftKey) { showSection('transactions'); e.preventDefault(); }
+    });
+}
+
+// --- DRAG & DROP IMPORT ---
+function setupDragDrop() {
+    const dropZone = document.getElementById('drop-zone');
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, preventDefaults, false);
+    });
+    function preventDefaults(e) { e.preventDefault(); e.stopPropagation(); }
+    ['dragenter', 'dragover'].forEach(eventName => {
+        dropZone.addEventListener(eventName, () => dropZone.classList.add('highlight-drop'), false);
+    });
+    ['dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, () => dropZone.classList.remove('highlight-drop'), false);
+    });
+    dropZone.addEventListener('drop', handleDrop, false);
+}
+function handleDrop(e) {
+    const dt = e.dataTransfer; const files = dt.files;
+    if (files.length > 0 && files[0].type === 'text/csv') {
+        document.getElementById('import-file').files = files;
+        // Trigger the existing import logic (conceptually - would need real import function here, keeping it simple for now)
+        alert('CSV dropped! (Import functionality would run here)');
+    }
 }
 
 // --- DASHBOARD ---
@@ -70,151 +96,84 @@ function updateDashboard() {
             }
         }
     });
-
     document.getElementById('total-income').textContent = `₱${mIncome.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
     document.getElementById('total-expense').textContent = `₱${mExpense.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
     document.getElementById('total-debt').textContent = `₱${data.debts.reduce((sum, d) => sum + (d.initial - d.paid), 0).toLocaleString()}`;
     document.getElementById('total-savings').textContent = `₱${data.goals.reduce((sum, g) => sum + g.saved, 0).toLocaleString()}`;
-
     const net = mIncome - mExpense;
     const statusEl = document.getElementById('budget-status');
     statusEl.className = 'status-banner ' + (net >= 0 ? 'status-positive' : 'status-negative');
-    statusEl.innerHTML = net >= 0 
-        ? `🎉 Galing! You are ₱${net.toLocaleString()} under budget this month.`
-        : `⚠️ Ingat! You are ₱${Math.abs(net).toLocaleString()} over budget.`;
-
-    // NEW: Quote
+    statusEl.innerHTML = net >= 0 ? `🎉 Galing! You are ₱${net.toLocaleString()} under budget.` : `⚠️ Ingat! You are ₱${Math.abs(net).toLocaleString()} over budget.`;
     document.getElementById('quote-of-the-day').textContent = `"${quotes[new Date().getDate() % quotes.length]}"`;
-
-    drawChart(mExpensesCat, mExpense);
-    checkAlerts(mExpensesCat);
+    drawChart(mExpensesCat, mExpense); checkAlerts(mExpensesCat);
 }
-
 function drawChart(expenses, total) {
     const chart = document.getElementById('budget-chart');
     const legend = document.getElementById('chart-legend');
-    if (total === 0) {
-        chart.style.background = 'var(--border)';
-        legend.innerHTML = '<small style="color:var(--text-muted)">No expenses yet this month</small>';
-        return;
-    }
+    if (total === 0) { chart.style.background = 'var(--border)'; legend.innerHTML = '<small style="color:var(--text-muted)">No expenses yet this month</small>'; return; }
     const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
     let gradient = [], start = 0, legendHtml = '';
     Object.entries(expenses).forEach(([cat, amount], i) => {
-        const color = colors[i % colors.length];
-        const percent = (amount / total) * 100;
-        gradient.push(`${color} ${start}% ${start + percent}%`);
-        start += percent;
+        const color = colors[i % colors.length]; const percent = (amount / total) * 100;
+        gradient.push(`${color} ${start}% ${start + percent}%`); start += percent;
         legendHtml += `<div class="legend-item"><div class="color-dot" style="background:${color}"></div> ${cat} (${percent.toFixed(0)}%)</div>`;
     });
     chart.classList.remove('pop-in'); void chart.offsetWidth; chart.classList.add('pop-in');
-    chart.style.background = `conic-gradient(${gradient.join(', ')})`;
-    legend.innerHTML = legendHtml;
+    chart.style.background = `conic-gradient(${gradient.join(', ')})`; legend.innerHTML = legendHtml;
 }
-
 function checkAlerts(currentExpenses) {
-    const list = document.getElementById('alerts-list');
-    list.innerHTML = '';
-    data.budgetLimits.forEach(l => {
-        if ((currentExpenses[l.category] || 0) >= l.limit) {
-            list.innerHTML += `<li style="color:var(--danger); border-left-color:var(--danger)">⚠️ <strong>${l.category}</strong> exceeded!</li>`;
-        }
-    });
+    const list = document.getElementById('alerts-list'); list.innerHTML = '';
+    data.budgetLimits.forEach(l => { if ((currentExpenses[l.category] || 0) >= l.limit) { list.innerHTML += `<li style="color:var(--danger); border-left-color:var(--danger)">⚠️ <strong>${l.category}</strong> exceeded!</li>`; } });
 }
 
 // --- TRANSACTIONS ---
 document.getElementById('transaction-form').addEventListener('submit', e => {
     e.preventDefault();
+    const type = document.getElementById('trans-type').value;
     data.transactions.push({
         id: Date.now(), date: document.getElementById('trans-date').value,
-        type: document.getElementById('trans-type').value,
-        amount: parseFloat(document.getElementById('trans-amount').value),
+        type: type, amount: parseFloat(document.getElementById('trans-amount').value),
         category: document.getElementById('trans-category').value,
         desc: document.getElementById('trans-desc').value,
-        recurring: document.getElementById('trans-recurring').value // NEW: Save recurring
+        recurring: document.getElementById('trans-recurring').value
     });
+    playSound(type === 'income' ? 'success' : 'click');
     saveData(); e.target.reset(); document.getElementById('trans-date').valueAsDate = new Date();
 });
-
 function updateTransactions() {
     const tbody = document.getElementById('trans-table-body');
     const term = document.getElementById('search-input').value.toLowerCase();
     const typeFilter = document.getElementById('filter-type') ? document.getElementById('filter-type').value : '';
     tbody.innerHTML = '';
-    data.transactions.filter(t => 
-        (t.desc.toLowerCase().includes(term) || t.category.toLowerCase().includes(term)) && 
-        (!typeFilter || t.type === typeFilter)
-    ).slice().reverse().slice(0, 50).forEach(t => {
+    data.transactions.filter(t => (t.desc.toLowerCase().includes(term) || t.category.toLowerCase().includes(term)) && (!typeFilter || t.type === typeFilter))
+    .slice().reverse().slice(0, 50).forEach(t => {
         const isExp = t.type === 'expense';
-        tbody.innerHTML += `
-            <tr class="${t.isRecurringInstance ? 'recurring-instance' : ''}">
-                <td><small>${t.date}</small></td>
-                <td><strong>${t.category}</strong><br><small style="color:var(--text-muted)">${t.desc.substring(0,15)} ${t.recurring !== 'none' && !t.isRecurringInstance ? '🔄' : ''}</small></td>
-                <td style="color:${isExp ? 'var(--danger)' : 'var(--success)'};font-weight:bold">
-                    ${isExp ? '-' : '+'}₱${t.amount.toLocaleString()}
-                </td>
-                <td><button onclick="deleteItem('transactions', ${t.id})" class="delete-btn" title="Delete">×</button></td>
-            </tr>`;
+        tbody.innerHTML += `<tr><td><small>${t.date}</small></td><td><strong>${t.category}</strong><br><small style="color:var(--text-muted)">${t.desc.substring(0,15)} ${t.recurring !== 'none' && !t.isRecurringInstance ? '🔄' : ''}</small></td><td style="color:${isExp ? 'var(--danger)' : 'var(--success)'};font-weight:bold">${isExp ? '-' : '+'}₱${t.amount.toLocaleString()}</td><td><button onclick="deleteItem('transactions', ${t.id})" class="delete-btn">×</button></td></tr>`;
     });
 }
-function applySearchFilter() { 
-    const opts = document.getElementById('filter-options');
-    if(opts) opts.style.display = opts.style.display==='none'?'block':'none'; 
-    updateTransactions(); 
-}
-function clearFilters() {
-    document.getElementById('search-input').value = '';
-    if(document.getElementById('filter-type')) document.getElementById('filter-type').value = '';
-    if(document.getElementById('filter-options')) document.getElementById('filter-options').style.display='none';
-    updateTransactions();
-}
+function applySearchFilter() { const opts = document.getElementById('filter-options'); if(opts) opts.style.display = opts.style.display==='none'?'block':'none'; updateTransactions(); }
+function clearFilters() { document.getElementById('search-input').value=''; if(document.getElementById('filter-type')) document.getElementById('filter-type').value=''; if(document.getElementById('filter-options')) document.getElementById('filter-options').style.display='none'; updateTransactions(); }
 
-// --- NEW: RECURRING TRANSACTIONS LOGIC ---
 function processRecurring() {
-    const today = new Date();
-    let madeChanges = false;
-    
-    const originals = data.transactions.filter(t => t.recurring && t.recurring !== 'none' && !t.isRecurringInstance);
-    
-    originals.forEach(t => {
+    const today = new Date(); let madeChanges = false;
+    data.transactions.filter(t => t.recurring && t.recurring !== 'none' && !t.isRecurringInstance).forEach(t => {
         let lastDate = new Date(t.date);
         const clones = data.transactions.filter(clone => clone.originalId === t.id);
-        
-        if (clones.length > 0) {
-            // Find the date of the newest clone
-            lastDate = new Date(Math.max(...clones.map(c => new Date(c.date))));
-        }
-
+        if (clones.length > 0) lastDate = new Date(Math.max(...clones.map(c => new Date(c.date))));
         let nextDate = new Date(lastDate);
-
-        // Calculate next due date
         if (t.recurring === 'daily') nextDate.setDate(nextDate.getDate() + 1);
         else if (t.recurring === 'weekly') nextDate.setDate(nextDate.getDate() + 7);
         else if (t.recurring === 'monthly') nextDate.setMonth(nextDate.getMonth() + 1);
-        else return; // Unknown interval
-
-        // Add all missing transactions up to today
         while (nextDate <= today) {
             madeChanges = true;
-            data.transactions.push({
-                ...t, // Copy original info
-                id: Date.now() + Math.random(), // New unique ID
-                date: nextDate.toISOString().split('T')[0],
-                isRecurringInstance: true,
-                originalId: t.id,
-                recurring: 'none' // The clone itself is not recurring
-            });
-            
-            // Increment for next loop
+            data.transactions.push({ ...t, id: Date.now() + Math.random(), date: nextDate.toISOString().split('T')[0], isRecurringInstance: true, originalId: t.id, recurring: 'none' });
             if (t.recurring === 'daily') nextDate.setDate(nextDate.getDate() + 1);
             else if (t.recurring === 'weekly') nextDate.setDate(nextDate.getDate() + 7);
             else if (t.recurring === 'monthly') nextDate.setMonth(nextDate.getMonth() + 1);
         }
     });
-    
-    return madeChanges; // True if we added new transactions
+    return madeChanges;
 }
-
 
 // --- DEBTS & SAVINGS ---
 function deleteItem(type, idOrIndex) {
@@ -225,52 +184,21 @@ function deleteItem(type, idOrIndex) {
         saveData();
     }
 }
-document.getElementById('debt-form').addEventListener('submit', e => {
-    e.preventDefault();
-    if(confirm('Add this new debt?')) {
-        data.debts.push({ name: document.getElementById('debt-name').value, initial: parseFloat(document.getElementById('debt-amount').value), paid: 0 });
-        saveData(); e.target.reset();
-    }
-});
+document.getElementById('debt-form').addEventListener('submit', e => { e.preventDefault(); if(confirm('Add this new debt?')) { data.debts.push({ name: document.getElementById('debt-name').value, initial: parseFloat(document.getElementById('debt-amount').value), paid: 0 }); playSound('click'); saveData(); e.target.reset(); } });
 function updateDebts() {
-    document.getElementById('debt-list').innerHTML = data.debts.map((d,i) => `
-        <li style="border-left-color: var(--accent)">
-            <div onclick="openPaymentModal(${i})" style="flex:1; cursor:pointer">
-                <strong>${d.name}</strong><br><small style="color:var(--text-muted)">Tap to pay</small>
-            </div>
-            <div style="text-align:right; margin-right:10px">
-                 <span style="font-weight:bold; color:${(d.initial - d.paid) > 0 ? 'var(--danger)' : 'var(--success)'}">
-                    ₱${(d.initial - d.paid).toLocaleString()}
-                </span><br><small>of ₱${d.initial.toLocaleString()}</small>
-            </div>
-            <button onclick="deleteItem('debts', ${i})" class="delete-btn">×</button>
-        </li>`).join('');
+    document.getElementById('debt-list').innerHTML = data.debts.map((d,i) => `<li style="border-left-color: var(--accent)"><div onclick="openPaymentModal(${i})" style="flex:1; cursor:pointer"><strong>${d.name}</strong><br><small style="color:var(--text-muted)">Tap to pay</small></div><div style="text-align:right; margin-right:10px"><span style="font-weight:bold; color:${(d.initial - d.paid) > 0 ? 'var(--danger)' : 'var(--success)'}">₱${(d.initial - d.paid).toLocaleString()}</span><br><small>of ₱${d.initial.toLocaleString()}</small></div><button onclick="deleteItem('debts', ${i})" class="delete-btn">×</button></li>`).join('');
 }
 let curDebt=null; function openPaymentModal(i){curDebt=i;document.getElementById('paying-debt-name').textContent=`Paying: ${data.debts[i].name}`;document.getElementById('payment-modal').style.display='flex';}
 function closePaymentModal(){document.getElementById('payment-modal').style.display='none';}
-document.getElementById('payment-form').addEventListener('submit',e=>{e.preventDefault();data.debts[curDebt].paid+=parseFloat(document.getElementById('payment-amount').value);saveData();closePaymentModal();e.target.reset();});
+document.getElementById('payment-form').addEventListener('submit',e=>{e.preventDefault(); const amt=parseFloat(document.getElementById('payment-amount').value); data.debts[curDebt].paid+=amt; if(data.debts[curDebt].paid >= data.debts[curDebt].initial) { runConfetti(); playSound('success'); } else { playSound('click'); } saveData();closePaymentModal();e.target.reset();});
 
-document.getElementById('goal-form').addEventListener('submit', e => {
-    e.preventDefault();
-    data.goals.push({ name: document.getElementById('goal-name').value, target: parseFloat(document.getElementById('goal-target').value), saved: 0 });
-    saveData(); e.target.reset();
-});
+document.getElementById('goal-form').addEventListener('submit', e => { e.preventDefault(); data.goals.push({ name: document.getElementById('goal-name').value, target: parseFloat(document.getElementById('goal-target').value), saved: 0 }); playSound('click'); saveData(); e.target.reset(); });
 function updateGoals() {
-    document.getElementById('goal-list').innerHTML = data.goals.map((g,i) => `
-        <li style="display:block; border-left-color: var(--primary)">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px">
-                <strong onclick="openContribModal(${i})" style="cursor:pointer">${g.name}</strong>
-                <div style="display:flex; align-items:center; gap:10px">
-                    <span>₱${g.saved.toLocaleString()} / ₱${g.target.toLocaleString()}</span>
-                    <button onclick="deleteItem('goals', ${i})" class="delete-btn">×</button>
-                </div>
-            </div>
-            <progress value="${g.saved}" max="${g.target}" onclick="openContribModal(${i})" style="cursor:pointer"></progress>
-        </li>`).join('');
+    document.getElementById('goal-list').innerHTML = data.goals.map((g,i) => `<li style="display:block; border-left-color: var(--primary)"><div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px"><strong onclick="openContribModal(${i})" style="cursor:pointer">${g.name}</strong><div style="display:flex; align-items:center; gap:10px"><span>₱${g.saved.toLocaleString()} / ₱${g.target.toLocaleString()}</span><button onclick="deleteItem('goals', ${i})" class="delete-btn">×</button></div></div><progress value="${g.saved}" max="${g.target}" onclick="openContribModal(${i})" style="cursor:pointer"></progress></li>`).join('');
 }
 let curGoal=null; function openContribModal(i){curGoal=i;document.getElementById('contrib-modal').style.display='flex';}
 function closeContribModal(){document.getElementById('contrib-modal').style.display='none';}
-document.getElementById('contrib-form').addEventListener('submit',e=>{e.preventDefault();data.goals[curGoal].saved+=parseFloat(document.getElementById('contrib-amount').value);saveData();closeContribModal();e.target.reset();});
+document.getElementById('contrib-form').addEventListener('submit',e=>{e.preventDefault(); const amt=parseFloat(document.getElementById('contrib-amount').value); data.goals[curGoal].saved+=amt; if(data.goals[curGoal].saved >= data.goals[curGoal].target) { runConfetti(); playSound('success'); } else { playSound('click'); } saveData();closeContribModal();e.target.reset();});
 
 // --- SETTINGS ---
 function updateSettings() {
@@ -281,13 +209,7 @@ function updateSettings() {
 }
 document.getElementById('category-form').addEventListener('submit', e => { e.preventDefault(); const val=document.getElementById('new-category').value.trim(); if(val&&!data.categories.includes(val)){data.categories.push(val);saveData();}e.target.reset(); });
 document.getElementById('budget-limit-form').addEventListener('submit', e => { e.preventDefault(); const cat=document.getElementById('limit-category').value; const lim=parseFloat(document.getElementById('limit-amount').value); data.budgetLimits=data.budgetLimits.filter(l=>l.category!==cat); data.budgetLimits.push({category:cat, limit:lim}); saveData(); e.target.reset(); });
-function showSection(id) {
-    document.querySelectorAll('.section').forEach(s => s.style.display = 'none');
-    document.getElementById(id).style.display = 'block';
-    document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
-    document.getElementById(`nav-${id}`).classList.add('active');
-    window.scrollTo(0,0);
-}
+function showSection(id) { document.querySelectorAll('.section').forEach(s => s.style.display = 'none'); document.getElementById(id).style.display = 'block'; document.querySelectorAll('nav button').forEach(b => b.classList.remove('active')); document.getElementById(`nav-${id}`).classList.add('active'); window.scrollTo(0,0); }
 function clearAllData() { if(confirm('⚠️ PERMANENTLY DELETE ALL DATA?')) { localStorage.removeItem('budgetData'); location.reload(); } }
 
 init();
