@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Filipino Budget Tracker</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="styles.css">
+    <!-- Meta for App Links (updated for tiiny.app) -->
+    <meta property="og:url" content="https://fixed-budget-ph.tiiny.site/">
+    <meta property="al:web:url" content="https://fixed-budget-ph.tiiny.site/">
+    <meta property="al:web:should_fallback" content="true">
+    <!-- PWA Enhancements -->
+    <meta name="theme-color" content="#007bff">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <!-- Detect Messenger and suggest external browser -->
+    <script>
+        // Check if running locally (file://) or direct tiiny.app - needs proper HTTPS link
+        if (location.protocol === 'file:' || location.hostname === 'tiiny.app') {
+            document.body.innerHTML = '<h1 style="padding:50px;text-align:center;">🚫 Bawal ang file:// o direct tiiny.app<br><br>Gamitin ang link: <a href="https://fixed-budget-ph.tiiny.site">https://fixed-budget-ph.tiiny.site</a></h1>';
+        }
+        // Detect Messenger and suggest Chrome/Safari
+        if (navigator.userAgent.indexOf('FBAN') > -1 || navigator.userAgent.indexOf('FBAV') > -1) {
+            if (confirm('For best experience, open in Chrome or Safari instead of Messenger. OK to redirect?')) {
+                window.location.href = 'googlechrome://' + window.location.href || 'safari://' + window.location.href;
+            }
+        }
+    </script>
+</head>
+<body>
+    <div id="app">
+        <header>
+            <h1>Filipino Budget Tracker</h1>
+            <button id="install-btn" style="display: none;">Add to Home Screen</button>
+        </header>
+        <nav>
+            <button onclick="showSection('dashboard')">Dashboard</button>
+            <button onclick="showSection('transactions')">Transactions</button>
+            <button onclick="showSection('debts')">Debts</button>
+            <button onclick="showSection('savings')">Savings</button>
+            <button onclick="showSection('settings')">Settings</button>
+            <button onclick="showSection('guide')">Guide</button>
+            <button onclick="exportData()">Export to CSV</button>
+            <input type="file" id="import-file" accept=".csv" style="display: none;">
+            <button onclick="document.getElementById('import-file').click()">Import from CSV</button>
+        </nav>
+        <main>
+            <section id="dashboard" class="section fade-in">
+                <h2>Monthly Overview</h2>
+                <div id="overview"></div>
+                <div id="budget-chart" class="chart-container"></div> <!-- Pie chart -->
+                <h3>Budget Alerts</h3>
+                <ul id="alerts-list"></ul>
+            </section>
+            <section id="transactions" class="section" style="display: none;">
+                <h2>Transactions</h2>
+                <div id="search-filter">
+                    <input type="text" id="search-input" placeholder="Search transactions...">
+                    <select id="filter-type"><option value="">All Types</option><option value="income">Income</option><option value="expense">Expense</option></select>
+                    <select id="filter-category"><option value="">All Categories</option></select>
+                    <input type="date" id="filter-start-date">
+                    <input type="date" id="filter-end-date">
+                    <button onclick="applySearchFilter()">Filter</button>
+                </div>
+                <form id="transaction-form">
+                    <label>Date: <input type="date" id="trans-date" required></label>
+                    <label>Type: <select id="trans-type"><option value="income">Income</option><option value="expense">Expense</option></select></label>
+                    <label>Amount: <input type="number" id="trans-amount" required></label>
+                    <label>Currency: <select id="trans-currency"><option value="PHP">₱ PHP</option></select></label>
+                    <label>Category: <select id="trans-category"></select></label>
+                    <label>Description: <input type="text" id="trans-desc"></label>
+                    <label>Recurring: <select id="trans-recurring">
+                        <option value="none">None</option>
+                        <option value="daily">Daily</option>
+                        <option value="weekly">Weekly</option>
+                        <option value="monthly">Monthly</option>
+                    </select></label>
+                    <button type="submit">Add</button>
+                </form>
+                <ul id="trans-list" class="parallax"></ul>
+            </section>
+            <section id="debts" class="section" style="display: none;">
+                <h2>Debt Tracker</h2>
+                <form id="debt-form">
+                    <label>Name: <input type="text" id="debt-name" required></label>
+                    <label>Initial Amount: ₱ <input type="number" id="debt-amount" required></label>
+                    <button type="submit">Add Debt</button>
+                </form>
+                <ul id="debt-list"></ul>
+                <form id="payment-form" style="display: none;">
+                    <label>Payment Amount: ₱ <input type="number" id="payment-amount" required></label>
+                    <label>Date: <input type="date" id="payment-date" required></label>
+                    <button type="submit">Add Payment</button>
+                </form>
+            </section>
+            <section id="savings" class="section" style="display: none;">
+                <h2>Savings Tracker</h2>
+                <form id="goal-form">
+                    <label>Goal Name: <input type="text" id="goal-name" required></label>
+                    <label>Target: ₱ <input type="number" id="goal-target" required></label>
+                    <button type="submit">Add Goal</button>
+                </form>
+                <ul id="goal-list"></ul>
+                <form id="contrib-form" style="display: none;">
+                    <label>Contribution: ₱ <input type="number" id="contrib-amount" required></label>
+                    <label>Date: <input type="date" id="contrib-date" required></label>
+                    <button type="submit">Add Contribution</button>
+                </form>
+            </section>
+            <section id="settings" class="section" style="display: none;">
+                <h2>Settings</h2>
+                <h3>Custom Categories</h3>
+                <form id="category-form">
+                    <input type="text" id="new-category" required>
+                    <button type="submit">Add</button>
+                </form>
+                <ul id="category-list"></ul>
+                <h3>Budget Limits</h3>
+                <form id="budget-limit-form">
+                    <label>Category: <select id="limit-category"></select></label>
+                    <label>Limit: ₱ <input type="number" id="limit-amount" required></label>
+                    <button type="submit">Set Limit</button>
+                </form>
+                <ul id="budget-limits-list"></ul>
+                <h3>Currencies</h3>
+                <form id="currency-form">
+                    <label>Currency Code: <input type="text" id="currency-code" placeholder="e.g., USD" required></label>
+                    <label>Exchange Rate to PHP: <input type="number" id="currency-rate" required></label>
+                    <button type="submit">Add Currency</button>
+                </form>
+                <ul id="currency-list"></ul>
+            </section>
+            <section id="guide" class="section" style="display: none;">
+                <h2>How to Use This App</h2>
+                <p>1. Add income/expenses in Transactions—it auto-calculates everything. Set recurring ones to save time.</p>
+                <p>2. Track debts and pay them off bit by bit.</p>
+                <p>3. Set savings goals and add money towards them.</p>
+                <p>4. Customize categories, budget limits, and currencies in Settings.</p>
+                <p>5. Search or filter transactions to find what you need.</p>
+                <p>6. Check the pie chart on Dashboard for spending by category.</p>
+                <p>7. Get alerts if you’re close to overspending.</p>
+                <p>8. Export to CSV, edit in Google Sheets, then import back.</p>
+                <p>It’s all local—no internet needed after install. Enjoy!</p>
+            </section>
+        </main>
+        <div id="loader" class="spinner" style="display: none;">Loading...</div>
+    </div>
+    <script>
+        // Fallback if app.js fails to load
+        window.addEventListener('load', () => {
+            if (typeof showSection === 'undefined') {
+                document.getElementById('app').innerHTML = '<h2 style="color:red;text-align:center;">Error: app.js not loaded. Try refreshing or check <a href="https://github.com/yourusername/budget-tracker">GitHub Pages</a>.</h2>';
+            }
+        });
+        // Try multiple paths for app.js (tiiny.app compatibility)
+        const scripts = [
+            'app.js',
+            '/app.js',
+            './app.js'
+        ];
+        let loaded = false;
+        scripts.forEach(src => {
+            const script = document.createElement('script');
+            script.src = src;
+            script.onload = () => loaded = true;
+            script.onerror = () => {};
+            document.body.appendChild(script);
+        });
+        // Timeout to ensure loading
+        setTimeout(() => {
+            if (!loaded && typeof showSection === 'undefined') {
+                document.getElementById('app').innerHTML = '<h2 style="color:red;text-align:center;">Error: app.js not loading. Use <a href="https://github.com/yourusername/budget-tracker">GitHub Pages</a> instead.</h2>';
+            }
+        }, 2000);
+    </script>
+</body>
+</html>
