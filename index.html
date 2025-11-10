@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Filipino Budget Tracker</title>
+    <meta name="description" content="Free offline Filipino Budget Tracker app.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto+Condensed:wght@700&display=swap" rel="stylesheet">
@@ -11,27 +12,33 @@
     <link rel="stylesheet" href="./styles.css">
     <meta name="theme-color" content="#2563eb">
     <meta name="apple-mobile-web-app-capable" content="yes">
+    <link rel="icon" type="image/png" href="./icon-192.png">
 </head>
 <body>
     <div id="app">
         <header>
             <div class="header-content">
-                <h1>💰 Filipino Budget <span style="color:var(--accent-yellow)">Tracker</span> 🇵🇭</h1>
-                <button id="theme-toggle" onclick="toggleTheme()" aria-label="Toggle Dark Mode">🌙</button>
+                <h1>💰 Filipino Budget <span class="accent-text">Tracker</span> 🇵🇭</h1>
+                <button id="theme-toggle" onclick="toggleTheme()" title="Switch Light/Dark Mode">🌙</button>
             </div>
         </header>
 
         <nav>
-            <button onclick="showSection('dashboard')" id="nav-dashboard" class="active">📊 Dash</button>
-            <button onclick="showSection('transactions')" id="nav-transactions">💸 Trans</button>
-            <button onclick="showSection('debts')" id="nav-debts">🤝 Utang</button>
-            <button onclick="showSection('savings')" id="nav-savings">🐷 Ipon</button>
-            <button onclick="showSection('settings')" id="nav-settings">⚙️ Set</button>
+            <button onclick="showSection('dashboard')" id="nav-dashboard" class="active" title="View Summary">📊 Dash</button>
+            <button onclick="showSection('transactions')" id="nav-transactions" title="Manage Expenses/Income">💸 Trans</button>
+            <button onclick="showSection('debts')" id="nav-debts" title="Manage Utang">🤝 Utang</button>
+            <button onclick="showSection('savings')" id="nav-savings" title="Manage Ipon">🐷 Ipon</button>
+            <button onclick="showSection('settings')" id="nav-settings" title="App Settings">⚙️ Set</button>
         </nav>
 
         <main>
             <section id="dashboard" class="section card fade-in">
                 <h2>📊 Dashboard Overview</h2>
+                
+                <div id="budget-status" class="status-banner">
+                    Computing status...
+                </div>
+
                 <div class="summary-grid">
                     <div class="summary-card income">
                         <h3>Income (Month)</h3>
@@ -42,32 +49,31 @@
                         <p id="total-expense">₱0.00</p>
                     </div>
                     <div class="summary-card debt">
-                        <h3>Total Debt</h3>
+                        <h3>Active Utang</h3>
                         <p id="total-debt">₱0.00</p>
                     </div>
                     <div class="summary-card savings">
-                        <h3>Total Savings</h3>
+                        <h3>Total Ipon</h3>
                         <p id="total-savings">₱0.00</p>
                     </div>
                 </div>
 
                 <div class="chart-wrapper">
-                     <h3>Spending by Category</h3>
-                     <div id="budget-chart" class="chart-container"></div>
+                     <h3>Monthly Spending</h3>
+                     <div id="budget-chart" class="chart-container pop-in"></div>
                      <div id="chart-legend" class="chart-legend"></div>
                 </div>
                 
-                <h3>⚠️ Alerts</h3>
-                <ul id="alerts-list"></ul>
+                <h3>⚠️ Budget Alerts</h3>
+                <ul id="alerts-list" class="list-group"></ul>
             </section>
 
             <section id="transactions" class="section card" style="display: none;">
                 <h2>💸 Transactions</h2>
                 <div id="search-filter" class="filter-bar">
-                    <input type="text" id="search-input" placeholder="🔍 Search...">
-                    <select id="filter-type"><option value="">All Types</option><option value="income">Income</option><option value="expense">Expense</option></select>
-                    <button onclick="applySearchFilter()" class="btn-small">Filter</button>
-                    <button onclick="clearFilters()" class="btn-small btn-secondary">Clear</button>
+                    <input type="text" id="search-input" placeholder="🔍 Search by name or category...">
+                    <button onclick="applySearchFilter()" class="btn-small" title="Apply filters">Filter</button>
+                    <button onclick="clearFilters()" class="btn-small btn-secondary" title="Show all">Clear</button>
                 </div>
 
                 <form id="transaction-form">
@@ -75,32 +81,57 @@
                          <label>📅 Date <input type="date" id="trans-date" required></label>
                          <label>📂 Type <select id="trans-type"><option value="expense">Expense</option><option value="income">Income</option></select></label>
                     </div>
-                    <label>💰 Amount (₱) <input type="number" id="trans-amount" placeholder="0.00" step="0.01" required></label>
+                    <label>💰 Amount
+                        <div class="currency-wrap">
+                            <span class="currency-symbol">₱</span>
+                            <input type="number" id="trans-amount" placeholder="0.00" step="0.01" min="0.01" required>
+                        </div>
+                    </label>
                     <label>🏷️ Category <select id="trans-category"></select></label>
                     <label>📝 Description <input type="text" id="trans-desc" placeholder="e.g., Sweldo, Meralco"></label>
-                    <button type="submit" class="btn-primary">➕ Add Transaction</button>
+                    <small class="form-tip">💡 Tip: Add recurring bills like 'Rent' every month.</small>
+                    <button type="submit" class="btn-primary" title="Save new transaction">➕ Add Transaction</button>
                 </form>
 
                 <h3>Recent History</h3>
-                <ul id="trans-list" class="list-group"></ul>
+                <div class="table-container">
+                    <table id="trans-table">
+                        <thead><tr><th>Date</th><th>Desc</th><th>Amount</th><th>Act</th></tr></thead>
+                        <tbody id="trans-table-body"></tbody>
+                    </table>
+                </div>
             </section>
 
             <section id="debts" class="section card" style="display: none;">
                 <h2>🤝 Utang Tracker</h2>
                 <form id="debt-form">
-                    <label>👤 Name <input type="text" id="debt-name" placeholder="Sino?" required></label>
-                    <label>💰 Initial Amount (₱) <input type="number" id="debt-amount" placeholder="0.00" step="0.01" required></label>
-                    <button type="submit" class="btn-accent">➕ Add Debt</button>
+                    <label>👤 Name <input type="text" id="debt-name" placeholder="Sino ang may utang?" required></label>
+                    <label>💰 Initial Amount
+                        <div class="currency-wrap">
+                            <span class="currency-symbol">₱</span>
+                            <input type="number" id="debt-amount" placeholder="0.00" step="0.01" min="0.01" required>
+                        </div>
+                    </label>
+                    <small class="form-tip">💡 Tap an existing debt below to add a payment.</small>
+                    <button type="submit" class="btn-accent" title="Add new debt record">➕ Add Debt</button>
                 </form>
                 <ul id="debt-list" class="list-group"></ul>
-                 <div id="payment-modal" class="modal" style="display:none;">
+
+                <div id="payment-modal" class="modal" style="display:none;">
                     <form id="payment-form" class="card modal-content">
                         <h3>Add Payment</h3>
                         <p id="paying-debt-name"></p>
-                        <label>💰 Amount (₱) <input type="number" id="payment-amount" required></label>
+                        <label>💰 Amount to Pay
+                            <div class="currency-wrap">
+                                <span class="currency-symbol">₱</span>
+                                <input type="number" id="payment-amount" min="0.01" required>
+                            </div>
+                        </label>
                         <label>📅 Date <input type="date" id="payment-date" required></label>
-                        <button type="submit" class="btn-primary">Confirm Payment</button>
-                        <button type="button" onclick="closePaymentModal()" class="btn-secondary">Cancel</button>
+                        <div class="form-row">
+                            <button type="submit" class="btn-primary">Confirm</button>
+                            <button type="button" onclick="closePaymentModal()" class="btn-secondary">Cancel</button>
+                        </div>
                     </form>
                 </div>
             </section>
@@ -108,18 +139,32 @@
             <section id="savings" class="section card" style="display: none;">
                 <h2>🐷 Ipon Goals</h2>
                 <form id="goal-form">
-                    <label>🎯 Goal Name <input type="text" id="goal-name" placeholder="Para saan?" required></label>
-                    <label>💰 Target Amount (₱) <input type="number" id="goal-target" placeholder="0.00" required></label>
+                    <label>🎯 Goal Name <input type="text" id="goal-name" placeholder="Para saan ang ipon?" required></label>
+                    <label>💰 Target Amount
+                         <div class="currency-wrap">
+                            <span class="currency-symbol">₱</span>
+                            <input type="number" id="goal-target" placeholder="0.00" min="0.01" required>
+                        </div>
+                    </label>
+                    <small class="form-tip">💡 Tap a goal below to add savings to it.</small>
                     <button type="submit" class="btn-primary">➕ Set Goal</button>
                 </form>
                 <ul id="goal-list" class="list-group"></ul>
+
                  <div id="contrib-modal" class="modal" style="display:none;">
                     <form id="contrib-form" class="card modal-content">
                         <h3>Add to Savings</h3>
-                        <label>💰 Amount (₱) <input type="number" id="contrib-amount" required></label>
+                        <label>💰 Amount to Save
+                            <div class="currency-wrap">
+                                <span class="currency-symbol">₱</span>
+                                <input type="number" id="contrib-amount" min="0.01" required>
+                            </div>
+                        </label>
                         <label>📅 Date <input type="date" id="contrib-date" required></label>
-                        <button type="submit" class="btn-primary">Confirm Save</button>
-                        <button type="button" onclick="closeContribModal()" class="btn-secondary">Cancel</button>
+                        <div class="form-row">
+                             <button type="submit" class="btn-primary">Confirm</button>
+                             <button type="button" onclick="closeContribModal()" class="btn-secondary">Cancel</button>
+                        </div>
                     </form>
                 </div>
             </section>
@@ -127,25 +172,34 @@
             <section id="settings" class="section card" style="display: none;">
                 <h2>⚙️ Settings</h2>
                 <div class="settings-group">
-                    <h3>⚠️ Data Zone</h3>
-                    <button onclick="exportData()" class="btn-secondary">⬇️ Export CSV</button>
+                    <h3>⚠️ Data Management</h3>
+                    <div class="form-row">
+                        <button onclick="exportData()" class="btn-secondary">⬇️ Export CSV</button>
+                        <button onclick="document.getElementById('import-file').click()" class="btn-secondary">⬆️ Import CSV</button>
+                    </div>
                     <input type="file" id="import-file" accept=".csv" style="display: none;">
-                    <button onclick="document.getElementById('import-file').click()" class="btn-secondary">⬆️ Import CSV</button>
                     <button onclick="clearAllData()" class="btn-danger">🗑️ Delete ALL Data</button>
                 </div>
+
                 <div class="settings-group">
                     <h3>🏷️ Categories</h3>
                     <form id="category-form" class="inline-form">
-                        <input type="text" id="new-category" placeholder="New Category" required>
+                        <input type="text" id="new-category" placeholder="New Category Name" required>
                         <button type="submit" class="btn-small">Add</button>
                     </form>
                     <div id="category-list" class="tags-list"></div>
                 </div>
+
                  <div class="settings-group">
-                    <h3>📉 Budget Limits</h3>
+                    <h3>📉 Monthly Limits</h3>
                     <form id="budget-limit-form">
                         <label>Category <select id="limit-category"></select></label>
-                        <label>Limit (₱) <input type="number" id="limit-amount" required></label>
+                        <label>Limit Amount
+                            <div class="currency-wrap">
+                                <span class="currency-symbol">₱</span>
+                                <input type="number" id="limit-amount" min="0.01" required>
+                            </div>
+                        </label>
                         <button type="submit" class="btn-primary">Set Limit</button>
                     </form>
                     <ul id="budget-limits-list" class="list-group"></ul>
@@ -154,10 +208,17 @@
         </main>
 
         <footer>
-            <p>© 2025 Filipino Budget Tracker 🇵🇭</p>
-            <button id="scroll-top" onclick="window.scrollTo({top: 0, behavior: 'smooth'})">⬆️ Top</button>
+            <div>
+                <p>© 2025 Filipino Budget Tracker 🇵🇭</p>
+                <small id="last-updated">Last updated: Never</small>
+            </div>
+            <button id="scroll-top" onclick="window.scrollTo({top: 0, behavior: 'smooth'})" title="Go to top">⬆️ Top</button>
         </footer>
-        <div id="loader" class="spinner" style="display: none;"></div>
+
+        <div id="loader" class="spinner" style="display: none;">
+            <div class="spinner-icon"></div>
+            <p>Computing your totals...</p>
+        </div>
     </div>
     <script src="./app.js"></script>
 </body>
