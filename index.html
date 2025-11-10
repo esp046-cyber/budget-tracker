@@ -1,115 +1,235 @@
-<section id="dashboard" class="section card fade-in">
-    <div class="dashboard-header">
-        <h2>📊 Financial Dashboard 
-            <span id="health-score" class="health-score score-critical">⚠️ Needs Attention</span>
-        </h2>
-        <div id="mascot" class="mascot" title="I'm your Budget Buddy!">🤖</div>
+<!DOCTYPE html>
+<html lang="en-PH">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Filipino Budget Tracker</title>
+    <meta name="description" content="Free offline Filipino Budget Tracker app.">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; media-src https://assets.mixkit.co;">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto+Condensed:wght@700&display=swap" rel="stylesheet">
+    <link rel="manifest" href="./manifest.json">
+    <link rel="stylesheet" href="./styles.css">
+    <meta name="theme-color" content="#2563eb">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <link rel="icon" type="image/png" href="./icon-192.png">
+</head>
+<body>
+    <audio id="sfx-success" src="https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3" preload="auto"></audio>
+    <audio id="sfx-click" src="https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3" preload="auto"></audio>
+
+    <div id="app">
+        <header>
+            <div class="header-content animate-slide-down">
+                <h1>💰 Filipino Budget <span class="accent-text">Tracker</span> 🇵🇭</h1>
+                <button id="theme-toggle" onclick="toggleTheme()" title="Switch Light/Dark Mode">🌙</button>
+            </div>
+        </header>
+
+        <nav class="animate-slide-down" style="animation-delay: 0.1s">
+            <button onclick="showSection('dashboard')" id="nav-dashboard" class="active" title="View Summary">📊 Dash</button>
+            <button onclick="showSection('transactions')" id="nav-transactions" title="Manage Expenses/Income">💸 Trans</button>
+            <button onclick="showSection('debts')" id="nav-debts" title="Manage Utang">🤝 Utang</button>
+            <button onclick="showSection('savings')" id="nav-savings" title="Manage Ipon">🐷 Ipon</button>
+            <button onclick="showSection('settings')" id="nav-settings" title="App Settings">⚙️ Set</button>
+        </nav>
+
+        <main>
+            <section id="dashboard" class="section card fade-in">
+                <div class="dashboard-header">
+                    <h2>📊 Dashboard Overview</h2>
+                    <div id="mascot" class="mascot" title="I'm your Budget Buddy!">🤖</div>
+                </div>
+                <div id="budget-status" class="status-banner">Computing status...</div>
+                <div id="quote-of-the-day" class="quote-banner"></div>
+                <div class="summary-grid">
+                    <div class="summary-card income">
+                        <h3>Income (Month)</h3>
+                        <p id="total-income">₱0.00</p>
+                    </div>
+                    <div class="summary-card expense">
+                        <h3>Expenses (Month)</h3>
+                        <p id="total-expense">₱0.00</p>
+                    </div>
+                    <div class="summary-card debt">
+                        <h3>Active Utang</h3>
+                        <p id="total-debt">₱0.00</p>
+                    </div>
+                    <div class="summary-card savings">
+                        <h3>Total Ipon</h3>
+                        <p id="total-savings">₱0.00</p>
+                    </div>
+                </div>
+                <div class="chart-wrapper">
+                     <h3>Monthly Spending</h3>
+                     <div id="budget-chart" class="chart-container pop-in"></div>
+                     <div id="chart-legend" class="chart-legend"></div>
+                </div>
+                <h3>⚠️ Budget Alerts</h3>
+                <ul id="alerts-list" class="list-group"></ul>
+            </section>
+
+            <section id="transactions" class="section card" style="display: none;">
+                <h2>💸 Transactions <small style="opacity:0.6; font-size:0.8rem">(Shift + N)</small></h2>
+                <div id="search-filter" class="filter-bar">
+                    <input type="text" id="search-input" placeholder="🔍 Search...">
+                    <button onclick="applySearchFilter()" class="btn-small" title="Apply filters">Filter</button>
+                    <button onclick="clearFilters()" class="btn-small btn-secondary" title="Show all">Clear</button>
+                </div>
+                <div class="filter-options" style="display:none;" id="filter-options">
+                     <label>Type: <select id="filter-type"><option value="">All</option><option value="income">Income</option><option value="expense">Expense</option></select></label>
+                </div>
+                <form id="transaction-form">
+                    <div class="form-row">
+                         <label>📅 Date <input type="date" id="trans-date" required></label>
+                         <label>📂 Type <select id="trans-type"><option value="expense">Expense</option><option value="income">Income</option></select></label>
+                    </div>
+                    <label>💰 Amount
+                        <div class="currency-wrap">
+                            <span class="currency-symbol">₱</span>
+                            <input type="number" id="trans-amount" placeholder="0.00" step="0.01" min="0.01" required>
+                        </div>
+                    </label>
+                    <div class="form-row">
+                        <label>🏷️ Category 
+                            <select id="trans-category">
+                                <option value="Food">Food</option>
+                                <option value="Bills">Bills</option>
+                                <option value="Transport">Transport</option>
+                                <option value="Shopping">Shopping</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </label>
+                        <label>🔄 Recurring
+                            <select id="trans-recurring">
+                                <option value="none">None</option>
+                                <option value="daily">Daily</option>
+                                <option value="weekly">Weekly</option>
+                                <option value="monthly">Monthly</option>
+                            </select>
+                        </label>
+                    </div>
+                    <label>📝 Description <input type="text" id="trans-desc" placeholder="e.g., Sweldo, Meralco"></label>
+                    <button type="submit" class="btn-primary" title="Save new transaction">➕ Add Transaction</button>
+                </form>
+                <h3>Recent History</h3>
+                <div class="table-container">
+                    <table id="trans-table">
+                        <thead><tr><th>Date</th><th>Desc</th><th>Amount</th><th>Act</th></tr></thead>
+                        <tbody id="trans-table-body"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section id="debts" class="section card" style="display: none;">
+                <h2>🤝 Utang Tracker</h2>
+                <form id="debt-form">
+                    <label>👤 Name <input type="text" id="debt-name" placeholder="Sino ang may utang?" required></label>
+                    <label>💰 Initial Amount
+                        <div class="currency-wrap">
+                            <span class="currency-symbol">₱</span>
+                            <input type="number" id="debt-amount" placeholder="0.00" step="0.01" min="0.01" required>
+                        </div>
+                    </label>
+                    <button type="submit" class="btn-accent" title="Add new debt record">➕ Add Debt</button>
+                </form>
+                <ul id="debt-list" class="list-group"></ul>
+                <div id="universal-modal" class="modal" style="display:none;">
+                    <form id="modal-form" class="card modal-content">
+                        <h3 id="modal-title"></h3>
+                        <p id="modal-desc"></p>
+                        <label>💰 Amount
+                            <div class="currency-wrap">
+                                <span class="currency-symbol">₱</span>
+                                <input type="number" id="modal-amount" step="0.01" min="0.01" required>
+                            </div>
+                        </label>
+                        <label>📅 Date <input type="date" id="modal-date" required></label>
+                        <div class="form-row">
+                            <button type="submit" class="btn-primary">Confirm</button>
+                            <button type="button" onclick="ModalManager.close()" class="btn-secondary">Cancel</button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+            <section id="savings" class="section card" style="display: none;">
+                <h2>🐷 Ipon Goals</h2>
+                <form id="goal-form">
+                    <label>🎯 Goal Name <input type="text" id="goal-name" placeholder="Para saan ang ipon?" required></label>
+                    <label>💰 Target Amount
+                         <div class="currency-wrap">
+                            <span class="currency-symbol">₱</span>
+                            <input type="number" id="goal-target" placeholder="0.00" step="0.01" min="0.01" required>
+                        </div>
+                    </label>
+                    <button type="submit" class="btn-primary">➕ Set Goal</button>
+                </form>
+                <ul id="goal-list" class="list-group"></ul>
+            </section>
+
+            <section id="settings" class="section card" style="display: none;">
+                <h2>⚙️ Settings</h2>
+                <div class="settings-group">
+                     <h3>🔊 Preferences</h3>
+                     <label style="flex-direction: row; align-items: center; gap: 10px;">
+                        <input type="checkbox" id="sound-toggle" onchange="toggleSound()" style="width: auto;"> Enable Sound Effects 🔊
+                     </label>
+                </div>
+                <div class="settings-group" id="drop-zone">
+                    <h3>⚠️ Data Management <small>(Drag & drop CSV here)</small></h3>
+                    <div class="form-row">
+                        <button onclick="exportData()" class="btn-secondary">⬇️ Export CSV</button>
+                        <button onclick="document.getElementById('import-file').click()" class="btn-secondary">⬆️ Import CSV</button>
+                    </div>
+                    <input type="file" id="import-file" accept=".csv" style="display: none;">
+                    <button onclick="clearAllData()" class="btn-danger">🗑️ Delete ALL Data</button>
+                </div>
+                <div class="settings-group">
+                    <h3>🏷️ Categories</h3>
+                    <form id="category-form" class="inline-form">
+                        <input type="text" id="new-category" placeholder="New Category Name" required>
+                        <button type="submit" class="btn-small">Add</button>
+                    </form>
+                    <div id="category-list" class="tags-list"></div>
+                </div>
+                 <div class="settings-group">
+                    <h3>📉 Monthly Limits</h3>
+                    <form id="budget-limit-form">
+                        <label>Category 
+                            <select id="limit-category">
+                                <option value="Food">Food</option>
+                                <option value="Bills">Bills</option>
+                                <option value="Transport">Transport</option>
+                                <option value="Shopping">Shopping</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </label>
+                        <label>Limit Amount
+                            <div class="currency-wrap">
+                                <span class="currency-symbol">₱</span>
+                                <input type="number" id="limit-amount" step="0.01" min="0.01" required>
+                            </div>
+                        </label>
+                        <button type="submit" class="btn-primary">Set Limit</button>
+                    </form>
+                    <ul id="budget-limits-list" class="list-group"></ul>
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <div><p>© 2025 Filipino Budget Tracker 🇵🇭</p><small id="last-updated">Last updated: Never</small></div>
+            <button id="scroll-top" onclick="window.scrollTo({top: 0, behavior: 'smooth'})" title="Go to top">⬆️ Top</button>
+        </footer>
+        
+        <button id="quick-add-button" onclick="showSection('transactions')" title="Add Transaction (Shift+N)">➕</button>
+        <canvas id="confetti-canvas" style="position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9999;"></canvas>
+        <div id="loader" class="spinner" style="display: none;"><div class="spinner-icon"></div><p>Computing...</p></div>
     </div>
     
-    <!-- ENHANCED STATUS BANNER -->
-    <div id="budget-status" class="status-banner status-critical">
-        <div style="display: flex; align-items: center; justify-content: space-between;">
-            <div>
-                <strong>🚨 Budget Alert!</strong> 
-                You're <strong>₱563 over budget</strong> this month.
-                <small style="display:block; margin-top:4px; opacity:0.8;">
-                    Consider reviewing your spending in Food & Transport categories.
-                </small>
-            </div>
-            <button class="btn-small" onclick="showSection('transactions')" style="background: white; color: #dc2626;">
-                Fix Now
-            </button>
-        </div>
-    </div>
-    
-    <div id="quote-of-the-day" class="quote-banner">
-        "Small steps lead to big savings." 
-        <small style="display:block; margin-top:4px;">💡 Tip: Try reducing Food expenses by 20%</small>
-    </div>
-
-    <!-- QUICK ACTIONS -->
-    <div class="quick-actions">
-        <div class="quick-action-btn" onclick="showSection('transactions')">
-            <div style="font-size:1.5rem;">💸</div>
-            <div style="font-size:0.8rem; font-weight:600;">Add Expense</div>
-        </div>
-        <div class="quick-action-btn" onclick="showSection('savings')">
-            <div style="font-size:1.5rem;">🐷</div>
-            <div style="font-size:0.8rem; font-weight:600;">Set Goal</div>
-        </div>
-        <div class="quick-action-btn" onclick="exportData()">
-            <div style="font-size:1.5rem;">📊</div>
-            <div style="font-size:0.8rem; font-weight:600;">Export</div>
-        </div>
-        <div class="quick-action-btn" onclick="clearFilters()">
-            <div style="font-size:1.5rem;">🔄</div>
-            <div style="font-size:0.8rem; font-weight:600;">Refresh</div>
-        </div>
-    </div>
-
-    <!-- ENHANCED SUMMARY GRID -->
-    <div class="summary-grid">
-        <div class="summary-card income" onclick="showSection('transactions')">
-            <h3>💰 Income <span class="trend-indicator trend-up">+12%</span></h3>
-            <p id="total-income">₱669.00</p>
-            <small style="opacity:0.7;">This month</small>
-        </div>
-        <div class="summary-card expense" onclick="showSection('transactions')">
-            <h3>💸 Expenses <span class="trend-indicator trend-down">+84%</span></h3>
-            <p id="total-expense">₱1,232.00</p>
-            <small style="opacity:0.7; color: #fee2e2;">Over budget</small>
-        </div>
-        <div class="summary-card debt" onclick="showSection('debts')">
-            <h3>🤝 Active Utang</h3>
-            <p id="total-debt">₱23.00</p>
-            <small style="opacity:0.7;">1 debt remaining</small>
-        </div>
-        <div class="summary-card savings" onclick="showSection('savings')">
-            <h3>🐷 Total Ipon</h3>
-            <p id="total-savings">₱0.00</p>
-            <small style="opacity:0.7;">No goals set</small>
-        </div>
-    </div>
-
-    <!-- ENHANCED CHART SECTION -->
-    <div class="chart-wrapper">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-            <h3>📈 Monthly Spending</h3>
-            <div style="font-size: 0.9rem; color: var(--text-muted);">
-                Total: <strong id="chart-total">₱1,232.00</strong>
-            </div>
-        </div>
-        <div id="budget-chart" class="chart-container pop-in"></div>
-        <div id="chart-legend" class="chart-legend">
-            <!-- Dynamic legend will be inserted here -->
-        </div>
-        <div style="text-align: center; margin-top: 15px;">
-            <small style="color: var(--text-muted);">
-                💡 <strong>Food (₱866)</strong> is your largest expense category
-            </small>
-        </div>
-    </div>
-
-    <!-- ENHANCED ALERTS -->
-    <h3>⚠️ Budget Insights</h3>
-    <ul id="alerts-list" class="list-group">
-        <li style="border-left-color: #f59e0b;">
-            <strong>🍔 Food Spending High</strong>
-            <span>₱866 (70% of budget)</span>
-            <small style="display:block; margin-top:4px; color: var(--text-muted);">
-                Consider meal planning to reduce costs
-            </small>
-        </li>
-        <li style="border-left-color: #3b82f6;">
-            <strong>🚗 Transport On Track</strong>
-            <span>₱366 (30% of budget)</span>
-        </li>
-        <li style="border-left-color: #dc2626;">
-            <strong>📉 Negative Cash Flow</strong>
-            <span>-₱563 this month</span>
-            <small style="display:block; margin-top:4px; color: var(--text-muted);">
-                Expenses exceed income
-            </small>
-        </li>
-    </ul>
-</section>
+    <script src="./app.js"></script>
+</body>
+</html>
