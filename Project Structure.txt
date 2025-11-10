@@ -1,0 +1,12 @@
+budget-tracker/
+├── index.html
+├── styles.css
+├── app.js
+├── sw.js
+├── manifest.json
+├── tests/                 # ✅ LIFETIME addition
+│   ├── app.test.js
+│   ├── jest.config.js
+│   └── test-setup.js
+├── package.json          # ✅ Add this
+└── README.md
