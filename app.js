@@ -1,3 +1,57 @@
+// Function to check if the user is on an iOS device (iPhone/iPad)
+function isIOS() {
+    const userAgent = window.navigator.userAgent;
+    return /iPhone|iPad|iPod/i.test(userAgent);
+}
+
+// -----------------------------------------------------------
+// PWA Installation & iOS Fallback Logic
+// -----------------------------------------------------------
+
+document.addEventListener('DOMContentLoaded', () => {
+    const iosGuide = document.querySelector('#ios-install-guide');
+    const installButton = document.querySelector('#installButton');
+    let deferredPrompt; 
+
+    // --- iOS DETECTION ---
+    if (isIOS()) {
+        if (iosGuide && installButton) {
+            // 1. On iOS, we hide the programmatic button (since it doesn't work)
+            installButton.style.display = 'none';
+            // 2. We show the manual instructions
+            iosGuide.style.display = 'block';
+            console.log('iOS device detected. Showing manual install guide.');
+            return; // Exit the function since beforeinstallprompt won't fire
+        }
+    }
+    
+    // --- ANDROID/DESKTOP LOGIC (Your existing code modified) ---
+    
+    // Listen for the event that tells us the PWA is installable
+    window.addEventListener('beforeinstallprompt', (event) => {
+        event.preventDefault(); 
+        deferredPrompt = event; 
+
+        // Show the custom install button now that we know the PWA is installable
+        if (installButton) {
+            installButton.style.display = 'block'; 
+            console.log('beforeinstallprompt fired, button is visible.');
+        }
+    });
+
+    // Add the click handler to your custom install button (already in your app.js)
+    if (installButton) {
+        installButton.addEventListener('click', async () => {
+            installButton.style.display = 'none';
+
+            if (!deferredPrompt) return;
+
+            const result = await deferredPrompt.prompt();
+            console.log(`Install prompt outcome: ${result.outcome}`);
+            deferredPrompt = null;
+        });
+    }
+});
 // Variable to store the deferred installation prompt event
 let deferredPrompt; 
 const installButton = document.querySelector('#installButton');
