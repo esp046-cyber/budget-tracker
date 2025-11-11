@@ -1,3 +1,49 @@
+// Variable to store the deferred installation prompt event
+let deferredPrompt; 
+const installButton = document.querySelector('#installButton');
+
+// 1. Listen for the browser's signal that the PWA is installable
+window.addEventListener('beforeinstallprompt', (event) => {
+  // Prevent the default browser mini-infobar from appearing
+  event.preventDefault(); 
+  
+  // Stash the event so it can be triggered when the user clicks our custom button
+  deferredPrompt = event; 
+  
+  // Show the custom install button now that we know the PWA is installable
+  if (installButton) {
+    installButton.style.display = 'block'; 
+    console.log('beforeinstallprompt fired and button is visible.');
+  }
+});
+
+// 2. Add the click handler to our custom install button
+if (installButton) {
+    installButton.addEventListener('click', async () => {
+        // Hide the button immediately upon click
+        installButton.style.display = 'none';
+
+        // Check if the event was saved
+        if (!deferredPrompt) {
+            console.error('Install prompt not available.');
+            return;
+        }
+
+        // Show the native install prompt to the user
+        const result = await deferredPrompt.prompt();
+
+        // Check the user's choice for debugging/analytics
+        if (result.outcome === 'accepted') {
+            console.log('User accepted the install prompt.');
+        } else {
+            console.log('User dismissed the install prompt.');
+        }
+
+        // The prompt can only be called once, so reset the event
+        deferredPrompt = null; 
+    });
+}
+
 // =========================================
 // TEST HELPER: Only run init in browser environment
 // =========================================

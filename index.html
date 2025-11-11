@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en-PH">
 <head>
+    <link rel="manifest" href="/manifest.json">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Filipino Budget Tracker</title>
@@ -17,6 +18,18 @@
     <link rel="icon" type="image/png" href="./icon-192.png">
 </head>
 <body>
+    <div style="text-align: center; margin: 30px;">
+    <button id="installButton" style="display:none; 
+             background-color: #007bff; /* Blue color for visibility */
+             color: white; 
+             border: none;
+             padding: 10px 20px; 
+             border-radius: 5px; 
+             font-size: 16px;
+             cursor: pointer;">
+        Install Filipino Budget Tracker
+    </button>
+    </div>
     <audio id="sfx-success" src="https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3" preload="auto"></audio>
     <audio id="sfx-click" src="https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3" preload="auto"></audio>
 
